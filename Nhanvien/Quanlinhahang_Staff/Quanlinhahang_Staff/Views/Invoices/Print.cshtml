@@ -1,0 +1,80 @@
+﻿@model Quanlinhahang.Data.Models.Hoadon
+@{
+    // Sửa tên biến class: KhachHang -> Khachhang
+    var kh = ViewBag.Khachhang as Quanlinhahang.Data.Models.Khachhang;
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Hóa đơn #@Model.Hoadonid</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 24px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="title mb-1">Nhà hàng Quanlinhahang_Staff</div>
+    <div>Mã hóa đơn: <b>#@Model.Hoadonid</b></div>
+
+    <div>Ngày: @(Model.Ngaylap != DateTime.MinValue ? Model.Ngaylap.ToString("dd/MM/yyyy HH:mm") : DateTime.Now.ToString("dd/MM/yyyy HH:mm"))</div>
+
+    <div>Khách hàng: <b>@(kh?.Hoten ?? "Khách lẻ")</b> - @(kh?.Sodienthoai ?? "")</div>
+
+    <hr />
+
+    <table class="table table-sm table-borderless">
+        <thead class="border-bottom">
+            <tr>
+                <th>Món</th>
+                <th class="text-end">SL</th>
+                <th class="text-end">Đơn giá</th>
+                <th class="text-end">Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Chitiethoadons != null)
+            {
+                foreach (var i in Model.Chitiethoadons)
+                {
+                    <tr>
+                        <td>@(i.Monan?.Tenmon ?? "Món không xác định")</td>
+
+                        <td class="text-end">@i.Soluong</td>
+
+                        <td class="text-end">@i.Dongia.ToString("#,0")</td>
+
+                        <td class="text-end">@((i.Soluong * i.Dongia).ToString("#,0"))</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <hr />
+
+    <div class="text-end">
+        <div><b>Tổng tiền: @Model.Tongtien.ToString("#,0")</b></div>
+
+        <div>HT thanh toán: @(Model.Hinhthucthanhtoan ?? "Tiền mặt")</div>
+
+        <div>Trạng thái: <b>@(Model.Trangthai?.Tentrangthai ?? "Đã thanh toán")</b></div>
+    </div>
+
+    <div class="mt-4 text-center small fst-italic">
+        Cảm ơn Quý khách và hẹn gặp lại!<br />
+        Wifi: FreeWifi - Pass: 12345678
+    </div>
+</body>
+</html>

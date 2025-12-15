@@ -1,0 +1,48 @@
+﻿/* Footer chung cho toàn bộ website */
+
+.footer {
+    background: #2c2416;
+    color: white;
+    padding: 60px 0 20px;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 50px;
+    margin-bottom: 40px;
+}
+
+.footer-section h4 {
+    color: #8b6f47;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    font-weight: 400;
+}
+
+.footer-section p {
+    margin-bottom: 10px;
+    opacity: 0.8;
+    font-size: 0.95rem;
+}
+
+.footer-section a {
+    text-decoration: none;
+    color: #d6b98e;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    opacity: 0.6;
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}

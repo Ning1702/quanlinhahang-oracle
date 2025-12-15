@@ -1,0 +1,126 @@
+﻿@model Quanlinhahang_Customer.Models.ViewModels.DatBanViewModel
+@using Quanlinhahang_Customer.Models
+@using System.Collections.Generic
+
+@{
+    ViewBag.Title = "Đặt bàn";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    // Không cần tải danhSachBan tĩnh ở đây nữa vì JS sẽ tải động
+}
+
+<div class="main-content">
+    <div class="container">
+        <h1 class="page-title">Đặt bàn & Xác nhận đơn hàng</h1>
+
+        <section class="order-summary">
+            <div class="summary-header">
+                <div>#</div>
+                <div>Món ăn</div>
+                <div>Giá</div>
+                <div>Số lượng</div>
+                <div>Thành tiền</div>
+                <div>Xóa</div>
+            </div>
+            <div class="summary-body" id="summaryBody">
+                <div class="empty-cart">
+                    Giỏ hàng đang trống. Vui lòng chọn món ở trang <a asp-action="Menu" asp-controller="Home">Thực đơn</a>.
+                </div>
+            </div>
+            <div class="summary-total">
+                <span>Tổng cộng:</span>
+                <span class="total-amount" id="summaryTotal">0₫</span>
+            </div>
+        </section>
+
+        <section class="booking-form">
+            <div class="user-greeting-box" id="userGreetingBox">
+                <p>Xin chào, <strong id="loggedInName">Quý Khách</strong>. Thông tin liên hệ sẽ được lấy từ tài khoản của bạn.</p>
+            </div>
+
+            <form id="bookingForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bookingDate">Ngày đặt</label>
+                        <input type="date" id="bookingDate" name="bookingDate" class="form-input" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="timeSlot">Khung giờ</label>
+                        <select id="timeSlot" name="timeSlot" class="form-select" required>
+                            <option value="">-- Chọn khung giờ --</option>
+                            <option value="Trua">Trưa (11:00 - 13:30)</option>
+                            <option value="Toi">Tối (18:00 - 21:30)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="guestCount">Số lượng khách</label>
+                        <input type="number" id="guestCount" name="guestCount" class="form-input" min="1" max="50" value="2" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tableSelection">Chọn bàn (Tùy chọn)</label>
+                        <button type="button" class="btn-select-table" id="openTableMapBtn">Chọn bàn từ sơ đồ</button>
+                        <input type="hidden" id="selectedBanPhongId" name="BanPhongId" />
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="note">Ghi chú thêm</label>
+                        <textarea id="note" name="note" class="form-input" placeholder="Ví dụ: cần ghép bàn, có trẻ nhỏ, dị ứng hải sản..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">Xác nhận đặt bàn</button>
+                    <button type="reset" class="btn-reset">Làm mới</button>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+
+<div class="modal" id="bookingModal">
+    <div class="modal-content">
+        <div class="modal-icon">
+            <svg viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="25" stroke="#22c55e" stroke-width="3" fill="none" />
+                <path d="M16 27l6 6 14-14" stroke="#22c55e" stroke-width="3" fill="none" />
+            </svg>
+        </div>
+        <h2>Đặt bàn thành công!</h2>
+        <p>Cảm ơn bạn đã đặt bàn tại Nhà hàng BTL.<br />Chúng tôi sẽ liên hệ xác nhận lại trong thời gian sớm nhất.</p>
+        <button class="btn-close" id="closeModalBtn">Đóng</button>
+    </div>
+</div>
+
+<div class="modal" id="tableMapModal">
+    <div class="modal-content table-modal-content">
+        <button class="close-btn" id="closeTableMapModal">&times;</button>
+        <div class="modal-header">
+            <h2>Sơ đồ Nhà hàng</h2>
+            <p>Chọn vị trí bàn phù hợp với sở thích của bạn.</p>
+        </div>
+
+        <div class="restaurant-floor-plan">
+            <div class="area-entrance"></div>
+            <div class="area-window">🪟 Cửa sổ kính (View đường phố)</div>
+
+            <div class="table-map-grid">
+                <p style="color:#aaa; text-align:center; grid-column: 1/-1; padding: 20px;">
+                    Vui lòng chọn Ngày và Giờ để xem sơ đồ bàn.
+                </p>
+            </div>
+
+            <div class="area-kitchen">👨‍🍳 Khu vực Bếp & Quầy Bar</div>
+        </div>
+
+        <div class="map-legend">
+            <div class="legend-item"><div class="legend-color available"></div><span>Trống</span></div>
+            <div class="legend-item"><div class="legend-color occupied"></div><span>Đã đặt/Bận</span></div>
+            <div class="legend-item"><div class="legend-color selected"></div><span>Đang chọn</span></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="~/css/datban-map.css" asp-append-version="true" />
+    <script src="~/js/datban-jquery.js" asp-append-version="true"></script>
+}

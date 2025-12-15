@@ -1,0 +1,66 @@
+﻿@model Quanlinhahang.Data.Models.Hoadon
+
+@{
+    ViewData["Title"] = "Tạo hóa đơn mới";
+}
+
+<h1>Tạo hóa đơn mới</h1>
+
+<h4>Thông tin Hóa đơn</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Datbanid" class="control-label">Mã Đặt Bàn</label>
+                <select asp-for="Datbanid" class="form-select" asp-items="ViewBag.Datbanid"></select>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Taikhoanid" class="control-label">Nhân viên lập</label>
+                <input asp-for="Taikhoanid" class="form-control" />
+                <span asp-validation-for="Taikhoanid" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Ngaylap" class="control-label">Ngày lập</label>
+                <input asp-for="Ngaylap" class="form-control" type="datetime-local" />
+                <span asp-validation-for="Ngaylap" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Tongtien" class="control-label">Tổng tiền</label>
+                <input asp-for="Tongtien" class="form-control" />
+                <span asp-validation-for="Tongtien" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Hinhthucthanhtoan" class="control-label">Hình thức thanh toán</label>
+                <input asp-for="Hinhthucthanhtoan" class="form-control" />
+                <span asp-validation-for="Hinhthucthanhtoan" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Trangthaiid" class="control-label">Trạng thái</label>
+                <select asp-for="Trangthaiid" class="form-select" asp-items="ViewBag.Trangthaiid"></select>
+                <span asp-validation-for="Trangthaiid" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Tạo mới" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

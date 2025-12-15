@@ -1,0 +1,62 @@
+﻿@model Quanlinhahang_Staff.Models.ViewModels.ReportVM
+@{
+    ViewData["Title"] = "Báo cáo cá nhân / Doanh thu cá nhân";
+}
+
+<h2 class="mt-4 mb-3 text-primary">
+    <i class="fas fa-chart-line"></i> Báo cáo cá nhân
+</h2>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-success shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-success">Hóa đơn hôm nay</h5>
+                <h3>@Model.TongHoaDonHomNay</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-primary shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-primary">Hóa đơn tháng này</h5>
+                <h3>@Model.TongHoaDonThangNay</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-info">Tổng doanh thu</h5>
+                <h3>@Model.TongDoanhThu.ToString("#,0") ₫</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-3">
+    <div class="col-md-4">
+        <div class="card border-warning shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-warning">Hoa hồng (5%)</h5>
+                <h3>@Model.HoaHong.ToString("#,0") ₫</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-success">Đã thanh toán</h5>
+                <h3>@Model.SoHoaDonDaThanhToan</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-danger shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-danger">Chưa thanh toán</h5>
+                <h3>@Model.SoHoaDonChuaThanhToan</h3>
+            </div>
+        </div>
+    </div>
+</div>

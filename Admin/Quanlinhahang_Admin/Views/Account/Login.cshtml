@@ -1,0 +1,178 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập Admin - Quản lý nhà hàng</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1920&q=80') center center / cover no-repeat;
+            font-family: 'Open Sans', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(18px);
+            border-radius: 20px;
+            padding: 50px 45px;
+            width: 400px;
+            color: #fff;
+            box-shadow: 0 0 25px rgba(0,0,0,0.3);
+            text-align: center;
+            animation: fadeIn 1.2s ease-in-out;
+        }
+
+            .login-container h1 {
+                font-family: 'Playfair Display', serif;
+                font-size: 28px;
+                margin-bottom: 10px;
+                letter-spacing: 1px;
+            }
+
+            .login-container p {
+                color: #ddd;
+                font-size: 14px;
+                margin-bottom: 30px;
+            }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 15px;
+            margin-bottom: 20px;
+            transition: background 0.3s;
+            box-sizing: border-box;
+        }
+
+            .form-control::placeholder {
+                color: #eee;
+            }
+
+            .form-control:focus {
+                background: rgba(255,255,255,0.3);
+                outline: none;
+            }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 13px;
+            cursor: pointer;
+            color: #ddd;
+        }
+
+        /* ===========================
+                   NÚT ĐĂNG NHẬP ĐÃ ĐƯỢC SỬA
+                ============================ */
+        .btn-login {
+            background: #d4a373;
+            color: #fff;
+            font-weight: 600;
+            border: none;
+            width: 100%; /* FULL chiều ngang */
+            padding: 14px 15px; /* bằng input */
+            border-radius: 8px; /* bằng input */
+            cursor: pointer;
+            font-size: 16px;
+            box-sizing: border-box; /* để không hụt kích thước */
+            display: block; /* kéo full width 100% thật */
+            transition: all 0.3s;
+        }
+
+            .btn-login:hover {
+                background: #b3814e;
+                transform: translateY(-1px);
+            }
+
+        .icon-logo {
+            font-size: 50px;
+            color: #f1c27d;
+            margin-bottom: 15px;
+        }
+
+        .error-message {
+            background: rgba(255, 80, 80, 0.2);
+            border: 1px solid rgba(255, 80, 80, 0.5);
+            color: #ffbaba;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        @@keyframes fadeIn {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="icon-logo"><i class="fa-solid fa-utensils"></i></div>
+        <h1>Đăng nhập Admin</h1>
+        <p>Vui lòng nhập thông tin để truy cập hệ thống quản lý</p>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="error-message">@ViewBag.Error</div>
+        }
+
+        <form asp-action="Login" method="post">
+            <input type="text" name="username" class="form-control" placeholder="Tên đăng nhập" required />
+
+            <div class="password-container">
+                <input type="password" name="password" id="password" class="form-control" placeholder="Mật khẩu" required />
+                <i class="fa-solid fa-eye toggle-password" id="togglePassword"></i>
+            </div>
+
+            <button type="submit" class="btn-login">
+                <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const togglePassword = document.querySelector("#togglePassword");
+        const password = document.querySelector("#password");
+
+        togglePassword.addEventListener("click", function () {
+            const type = password.getAttribute("type") === "password" ? "text" : "password";
+            password.setAttribute("type", type);
+            this.classList.toggle("fa-eye-slash");
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+﻿@model IEnumerable<Quanlinhahang.Data.Models.Monan>
+@{
+    ViewData["Title"] = "Quản lý món ăn";
+}
+
+<!-- SweetAlert -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<!-- Nút X đỏ -->
+<a href="/Admin/Home/Index" class="exit-square">✕</a>
+
+<div class="container mt-4">
+
+    <h2 class="text-center fw-bold mb-4">Quản lý món ăn</h2>
+
+    <!-- CARD TÌM KIẾM -->
+    <div class="filter-card shadow-sm p-4 mb-4">
+        <form method="get" asp-action="Index">
+
+            <div class="mb-3">
+                <label class="fw-semibold">Lọc theo danh mục</label>
+                <select name="DanhMucID" class="form-select">
+                    <option value="">-- Tất cả danh mục --</option>
+                    @foreach (var dm in (ViewBag.DanhMucList as List<Quanlinhahang.Data.Models.Danhmucmon> ?? new List<Quanlinhahang.Data.Models.Danhmucmon>()))
+                    {
+                        <option value="@dm.Danhmucid">@dm.Tendanhmuc</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Nút tìm kiếm -->
+            <div class="d-flex justify-content-center mt-3">
+                <button class="btn btn-primary px-5 fw-semibold">
+                    <i class="fa fa-search"></i> Tìm kiếm
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- NÚT THÊM MÓN – TÁCH RIÊNG -->
+    <div class="d-flex justify-content-center mb-3">
+        <a asp-area="Admin"
+           asp-controller="MonAns"
+           asp-action="Create"
+           class="btn btn-success px-4 fw-semibold" style="border-radius:8px;">
+            <i class="fa fa-plus"></i> Thêm món
+        </a>
+    </div>
+
+
+    <!-- BẢNG DANH SÁCH MÓN ĂN -->
+    <table class="table table-bordered table-striped text-center align-middle shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Ảnh</th>
+                <th>Tên món</th>
+                <th>Đơn giá</th>
+                <th>Danh mục</th>
+                <th>Trạng thái</th>
+                <th>Mô tả</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-muted py-3">Không có món ăn nào để hiển thị.</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var mon in Model)
+                {
+                    <tr id="row-@mon.Monanid">
+
+                        <td>
+                            @if (!string.IsNullOrEmpty(mon.Hinhanhurl))
+                            {
+                                <img src="@mon.Hinhanhurl"
+                                     style="width:70px;height:70px;border-radius:8px;cursor:pointer;object-fit:cover"
+                                     onclick="zoomImage('@mon.Hinhanhurl')" />
+                            }
+                            else
+                            {
+                                <img src="~/images/no-image.png"
+                                     style="width:70px;height:70px;border-radius:8px;object-fit:cover" />
+                            }
+                        </td>
+
+                        <td>@mon.Tenmon</td>
+                        <td>@String.Format("{0:N0} ₫", mon.Dongia)</td>
+                        <td>@mon.Danhmuc?.Tendanhmuc</td>
+                        <td>@mon.Trangthai</td>
+                        <td>@mon.Mota</td>
+
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@mon.Monanid"
+                               class="btn btn-warning btn-sm fw-semibold">
+                                <i class="fa-solid fa-pen-to-square"></i> Sửa
+                            </a>
+
+                            <button type="button"
+                                    class="btn btn-danger btn-sm fw-semibold"
+                                    onclick="confirmDelete(@mon.Monanid)">
+                                <i class="fa-solid fa-trash"></i> Xóa
+                            </button>
+                        </td>
+
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <!-- THỐNG KÊ -->
+    <div class="d-flex justify-content-center my-4">
+        <div class="stat-box shadow-sm">
+            <div class="fw-bold fs-4 text-dark text-center">Tổng số món ăn</div>
+            <div id="totalCount" class="fs-3 fw-bold text-primary text-center">
+                @Model.Count()
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- TICK XANH SAU KHI THÊM -->
+@if (TempData["msg"] != null)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            Swal.fire({
+                icon: 'success',
+                title: '@TempData["msg"]',
+                showConfirmButton: false,
+                timer: 1600
+            });
+        });
+    </script>
+}
+
+<script>
+    // Xóa bằng AJAX
+    function confirmDelete(id) {
+        Swal.fire({
+            title: 'Xác nhận xóa?',
+            text: "Bạn có chắc muốn xóa món ăn này?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                fetch('/Admin/MonAns/DeleteConfirmed?id=' + id, { method: 'POST' })
+                    .then(res => {
+                        if (!res.ok) {
+                            Swal.fire("Lỗi", "Không thể xóa món ăn", "error");
+                            return;
+                        }
+
+                        document.getElementById("row-" + id)?.remove();
+
+                        let total = document.getElementById("totalCount");
+                        total.innerText = parseInt(total.innerText) - 1;
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Đã xóa thành công!',
+                            timer: 1200,
+                            showConfirmButton: false
+                        });
+                    });
+            }
+        });
+    }
+
+    // Phóng to ảnh
+    function zoomImage(url) {
+        Swal.fire({
+            imageUrl: url,
+            imageAlt: 'Ảnh món ăn',
+            showConfirmButton: false,
+            background: '#000000d9'
+        });
+    }
+</script>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .container {
+        background: #fff;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+    }
+
+    .filter-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e1e1e1;
+    }
+
+    .stat-box {
+        width: 280px;
+        background: white;
+        padding: 20px 25px;
+        border-radius: 16px;
+        border: 1px solid #e0e0e0;
+    }
+
+    /* Nút X đỏ */
+    .exit-square {
+        position: fixed;
+        top: 20px;
+        right: 25px;
+        width: 42px;
+        height: 42px;
+        background: #dc3545;
+        color: white !important;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        text-decoration: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+        z-index: 9999;
+        transition: 0.15s;
+    }
+
+        .exit-square:hover {
+            background: #b02a37;
+            transform: scale(1.05);
+        }
+</style>

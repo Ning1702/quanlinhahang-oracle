@@ -1,0 +1,65 @@
+﻿@{
+    ViewData["Title"] = "Thông tin tài khoản";
+}
+@section Styles {
+	<link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/account-info.css" asp-append-version="true" />
+}
+
+
+<div class="register-container">
+    <form id="infoForm">
+
+        <div id="infoError" class="error-message" style="display:none;"></div>
+        <div id="infoSuccess" class="success-message" style="display:none;"></div>
+
+        <fieldset id="infoFieldset" disabled>
+            <div class="form-group">
+                <label for="regUsername">Tên đăng nhập</label>
+                <div class="input-wrapper">
+                    <input type="text" id="regUsername" name="username" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="regFullName">Họ và tên *</label>
+                <div class="input-wrapper">
+                    <input type="text" id="regFullName" name="fullName" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="regEmail">Email *</label>
+                <div class="input-wrapper">
+                    <input type="email" id="regEmail" name="email" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="regPhone">Số điện thoại *</label>
+                <div class="input-wrapper">
+                    <input type="tel" id="regPhone" name="phone" required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="regAddress">Địa chỉ (Tùy chọn)</label>
+                <div class="input-wrapper">
+                    <input type="text" id="regAddress" name="address" />
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="button-group">
+            <button type="button" class="submit-btn" id="btnEdit">Chỉnh sửa thông tin</button>
+
+            <button type="submit" class="submit-btn" id="btnSave" style="display:none;">Lưu thay đổi</button>
+
+            <button type="button" class="submit-btn" id="btnCancel" style="display:none; background-color: #555;">Hủy</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="~/js/account-info.js" asp-append-version="true"></script>
+}

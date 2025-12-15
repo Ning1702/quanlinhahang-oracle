@@ -1,0 +1,201 @@
+﻿html {
+  font-size: 14px;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+main {
+    flex: 1 0 auto;
+}
+
+footer {
+    flex-shrink: 0;
+    margin-top: auto;
+}
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+:root {
+    --color-background-dark: #121212;
+    --color-text-light: #f0f0f0;
+    --color-text-subtle: #999999;
+    --color-input-bg: #1e1e1e;
+    --color-border: #333;
+    --color-primary: #daa520;
+    --color-primary-hover: #e6b840;
+    --font-family-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--color-background-dark);
+    color: var(--color-text-light);
+    font-family: var(--font-family-main);
+    margin: 0;
+    padding: 0;
+}
+
+input:focus, button:focus, a:focus {
+    outline: none;
+}
+
+
+.user-section #loginBtn {
+    background-color: var(--color-primary);
+    color: var(--color-background-dark);
+    border: none;
+    padding: 8px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+    .user-section #loginBtn:hover {
+        background-color: var(--color-primary-hover);
+    }
+
+.register-container {
+    padding-top: 100px;
+    padding-bottom: 50px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+#registerForm {
+    width: 90%;
+    max-width: 600px;
+    margin: 110px auto;
+    background: var(--color-background-dark);
+    padding: 0;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+#registerForm label {
+    display: block;
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+#registerForm input[type="text"],
+#registerForm input[type="email"],
+#registerForm input[type="tel"],
+#registerForm input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--color-input-bg);
+    color: var(--color-text-light);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+#registerForm input::placeholder {
+    color: var(--color-text-subtle);
+}
+
+#registerForm input:focus {
+    border-color: var(--color-primary);
+}
+
+.input-wrapper {
+    position: relative;
+    display: block;
+}
+
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--color-text-subtle);
+    font-size: 1rem;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--color-primary);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+    .submit-btn:hover {
+        background-color: var(--color-primary-hover);
+    }
+
+.register-link {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: var(--color-text-subtle);
+}
+
+    .register-link a {
+        color: var(--color-primary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+footer {
+    background-color: #0d0d0d;
+    color: var(--color-text-subtle);
+    padding: 30px 5%;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    border-top: 1px solid #1e1e1e;
+    font-size: 0.9rem;
+}
+
+.contact-section, .hours-section, .social-section {
+    flex-basis: 30%;
+}
+
+    .contact-section p, .hours-section p, .social-section p {
+        margin: 5px 0;
+    }
+
+    .contact-section i {
+        margin-right: 10px;
+        color: var(--color-primary);
+    }

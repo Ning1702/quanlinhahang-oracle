@@ -1,0 +1,87 @@
+﻿:root {
+    --color-primary: #c59d5f; /* Màu vàng kim */
+    --color-border-subtle: rgba(197, 157, 95, 0.2);
+    --color-input-bg: rgba(255, 255, 255, 0.05);
+    --color-text-light: #e8e8e8;
+}
+
+.register-container {
+    padding-top: 100px;
+    padding-bottom: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+#infoForm {
+    width: 90%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+    /* -------------------------------------- */
+    /* 1. INPUT BASE STYLE (CHẾ ĐỘ SỬA) */
+    /* -------------------------------------- */
+    #infoForm fieldset:not([disabled]) input[type="text"],
+    #infoForm fieldset:not([disabled]) input[type="email"],
+    #infoForm fieldset:not([disabled]) input[type="tel"],
+    #infoForm fieldset:not([disabled]) input[type="password"] {
+        width: 100%;
+        background-color: var(--color-input-bg);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 10px;
+        color: var(--color-text-light);
+        font-size: 15px;
+        font-family: "Lato", sans-serif;
+        transition: all 0.3s ease;
+    }
+
+    #infoForm input:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    /* -------------------------------------- */
+    /* 2. CHẾ ĐỘ XEM */
+    /* -------------------------------------- */
+    #infoForm fieldset[disabled] input[type="text"],
+    #infoForm fieldset[disabled] input[type="email"],
+    #infoForm fieldset[disabled] input[type="tel"] {
+        padding-left: 10px;
+        background-color: transparent !important;
+        border: 1px solid var(--color-primary);
+
+        color: var(--color-text-light) !important;
+        cursor: default;
+        opacity: 1 !important;
+        -webkit-text-fill-color: var(--color-text-light) !important;
+        box-shadow: none !important;
+    }
+
+
+    /* -------------------------------------- */
+    /* 3. SỬA LỖI AUTOFILL (Để giữ nền tối) */
+    /* -------------------------------------- */
+
+    #infoForm fieldset:not([disabled]) input:-webkit-autofill,
+    #infoForm fieldset:not([disabled]) input:-webkit-autofill:hover,
+    #infoForm fieldset:not([disabled]) input:-webkit-autofill:focus,
+    #infoForm fieldset:not([disabled]) input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.05) inset !important;
+        transition: background-color 5000s ease-in-out 0s;
+        border-color: var(--color-border-subtle) !important;
+    }
+
+    #infoForm fieldset[disabled] input:-webkit-autofill,
+    #infoForm fieldset[disabled] input:-webkit-autofill:hover,
+    #infoForm fieldset[disabled] input:-webkit-autofill:focus,
+    #infoForm fieldset[disabled] input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+        border: 1px solid transparent !important;
+    }
+
+fieldset[disabled] .toggle-password {
+    display: none;
+}

@@ -1,0 +1,493 @@
+﻿/* RESET & ROOT -------------------------------------------------------------*/
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #ffd700;
+    --dark-bg: #1a1a1a;
+    --darker-bg: #0d0d0d;
+    --text-light: #ffffff;
+    --text-gray: #b0b0b0;
+    --accent-red: #c94a4a;
+    --border-color: #262626;
+    --success-green: #22c55e;
+    --card-radius: 12px;
+    --gap: 1rem;
+    --container-max: 1400px;
+}
+
+/* BASE LAYOUT --------------------------------------------------------------*/
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    background: var(--darker-bg);
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+.main-content {
+    margin-top: 150px;
+}
+
+.container {
+    max-width: var(--container-max);
+    margin: 0px auto;
+    padding: 0 20px;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 2.2rem;
+    margin: 2.5rem 0;
+    color: var(--text-light);
+    letter-spacing: 1px;
+}
+
+.panel {
+    background: var(--dark-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.75rem;
+}
+
+/* ========================================================================== */
+/* 🧾 ORDER SUMMARY (Giữ nguyên) */
+/* ========================================================================== */
+.summary-header {
+    display: grid;
+    grid-template-columns: 30px 2fr 1fr 1.5fr 1.5fr 50px;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 12px 12px 18px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+    font-weight: 700;
+    color: var(--text-gray);
+    font-size: 0.95rem;
+}
+
+    .summary-header div:nth-child(1) {
+        text-align: center;
+    }
+
+    .summary-header div:nth-child(2) {
+        text-align: left;
+        padding-left: 6px;
+    }
+
+    .summary-header div:nth-child(3),
+    .summary-header div:nth-child(5) {
+        text-align: right;
+        padding-right: 8px;
+    }
+
+    .summary-header div:nth-child(4) {
+        text-align: center;
+    }
+
+.summary-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 6px;
+}
+
+.summary-row {
+    display: grid;
+    grid-template-columns: 30px 2fr 1fr 1.5fr 1.5fr 50px;
+    gap: 12px;
+    align-items: center;
+    padding: 14px;
+    background: #0f0f0f;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.15s ease;
+}
+
+    .summary-row:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        border-color: #333;
+    }
+
+    .summary-row .summary-col:nth-child(1) {
+        text-align: center;
+        color: #ddd;
+    }
+
+    .summary-row .summary-col:nth-child(2) {
+        text-align: left;
+        padding-left: 6px;
+        font-weight: 600;
+    }
+
+    .summary-row .summary-col:nth-child(3) {
+        text-align: right;
+        color: var(--text-gray);
+        white-space: nowrap;
+    }
+
+    .summary-row .summary-col:nth-child(4) {
+        text-align: center;
+        color: #fff;
+    }
+
+    .summary-row .summary-col:nth-child(5) {
+        text-align: right;
+        font-weight: 800;
+        color: var(--primary-color);
+        white-space: nowrap;
+    }
+
+.empty-cart {
+    text-align: center;
+    color: var(--text-gray);
+    padding: 2rem;
+}
+
+.summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    border-top: 2px solid var(--border-color);
+    margin-top: 10px;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+    .summary-total span:first-child {
+        color: var(--text-light);
+    }
+
+    .summary-total .total-amount {
+        color: var(--primary-color);
+        font-size: 1.45rem;
+        font-weight: 900;
+    }
+
+/* ========================================================================== */
+/* 🧍 FORM ĐẶT BÀN (ĐÃ TÁCH CLASS) */
+/* ========================================================================== */
+.booking-form {
+    background: var(--dark-bg);
+    border-radius: var(--card-radius);
+    padding: 1.75rem;
+    border: 1px solid var(--border-color);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+/* === 1. CSS CHO DẠNG NHẬP (input, textarea) === */
+.form-input {
+    background: #0b0b0b;
+    border: 1px solid var(--border-color);
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: color 0.3s ease, border-color 0.3s ease;
+    color: var(--text-gray); /* Chữ mờ mặc định */
+}
+
+    .form-input::placeholder {
+        color: var(--text-gray);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        color: var(--text-light); /* Chữ sáng khi focus */
+        box-shadow: 0 0 0 4px rgba(255,215,0,0.06);
+    }
+
+    .form-input:hover {
+        border-color: var(--primary-color, #c59d5f);
+        color: var(--text-light); /* Chữ sáng khi hover */
+    }
+
+/* === 2. CSS CHO DẠNG CHỌN (select) === */
+.form-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #0b0b0b;
+    color: var(--text-light); /* Chữ luôn sáng */
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23b0b0b0'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.2em 1.2em;
+    border: 1px solid var(--border-color);
+    padding: 0.9rem 1rem;
+    padding-right: 2.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+    .form-select:hover {
+        border-color: var(--primary-color, #c59d5f);
+    }
+
+    .form-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(255,215,0,0.06);
+    }
+
+    .form-select option {
+        background: var(--dark-bg, #1a1a1a);
+        color: var(--text-light, #ffffff);
+    }
+        /* Style cho option placeholder (vd: -- Chọn --) */
+        .form-select option[value=""] {
+            color: var(--text-gray);
+        }
+
+    .form-select:invalid {
+        color: var(--text-gray); /* Hiển thị placeholder màu xám */
+    }
+
+/* ========================================================================== */
+/* CÁC PHẦN KHÁC (Giữ nguyên) */
+/* ========================================================================== */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.btn-submit, .btn-reset {
+    padding: 0.9rem 2.4rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.btn-submit {
+    background: var(--accent-red);
+    color: var(--text-light);
+    transition: 0.2s;
+}
+
+    .btn-submit:hover {
+        background: #a83d3d;
+        transform: translateY(-2px);
+    }
+
+.btn-reset {
+    background: transparent;
+    color: var(--text-gray);
+    border: 1px solid var(--border-color);
+}
+
+#bookingModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+    #bookingModal.active {
+        display: flex;
+    }
+
+    #bookingModal .modal-content {
+        background: #0b0b0b;
+        color: #fff;
+        border-radius: 14px;
+        padding: 30px;
+        text-align: center;
+        width: 100%;
+        max-width: 480px;
+        border: 1px solid var(--border-color);
+        padding-bottom: 30px;
+    }
+
+    #bookingModal .modal-icon {
+        width: 86px;
+        height: 86px;
+        margin: 0 auto 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: #0a0a0a;
+        font-size: 34px;
+    }
+
+    #bookingModal h2 {
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+
+    #bookingModal p {
+        color: var(--text-gray);
+        margin-bottom: 18px;
+        line-height: 1.5;
+    }
+
+    #bookingModal .btn-close {
+        display: inline-block;
+        background: var(--primary-color);
+        color: #000;
+        padding: 10px 30px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        transition: 0.2s;
+        width: 85%;
+    }
+
+        #bookingModal .btn-close:hover {
+            background: #facc15;
+            transform: translateY(-1px);
+        }
+
+.qty-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px;
+    max-width: 110px;
+    margin: 0 auto;
+}
+
+    .qty-controls .qty {
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 0 5px;
+        color: var(--text-light);
+    }
+
+.qty-btn {
+    background: transparent;
+    color: var(--text-gray);
+    border: none;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    font-size: 20px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+    .qty-btn:hover {
+        color: var(--text-light);
+    }
+
+.remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent-red);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+    text-align: center;
+}
+
+    .remove-btn:hover {
+        color: #ff6b6b;
+    }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .summary-header {
+        display: none;
+    }
+
+    .summary-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+    }
+
+        .summary-row .summary-col:nth-child(1) {
+            order: 0;
+            opacity: 0.8;
+            text-align: left;
+        }
+
+        .summary-row .summary-col:nth-child(2) {
+            order: 1;
+            grid-column: 1 / -1;
+        }
+
+        .summary-row .summary-col:nth-child(3) {
+            order: 2;
+            text-align: left;
+            color: var(--text-gray);
+        }
+
+        .summary-row .summary-col:nth-child(4) {
+            order: 3;
+            text-align: left;
+        }
+
+        .summary-row .summary-col:nth-child(5) {
+            order: 4;
+            grid-column: 2 / -1;
+            text-align: right;
+        }
+
+        .summary-row .summary-col:nth-child(6) {
+            order: 5;
+            grid-column: 1 / 2;
+            text-align: right;
+        }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-submit, .btn-reset {
+        width: 100%;
+    }
+}
+
+.text-muted {
+    color: var(--text-gray);
+    font-size: .95rem;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.history-item-info {
+    margin: 20px;
+}
+
+.voucher-code-section {
+    margin-right: 10px;
+}

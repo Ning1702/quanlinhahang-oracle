@@ -1,0 +1,69 @@
+﻿@model Quanlinhahang.Data.Models.Hoadon
+
+@{
+    ViewData["Title"] = "Xóa hóa đơn";
+
+    // ===== GIỮ NGUYÊN KHỐI LOGIC CỦA BẠN =====
+    var returnUrl = ViewBag.RefererUrl as string;
+    if (string.IsNullOrEmpty(returnUrl))
+    {
+        returnUrl = Url.Action("Index"); // Fallback nếu không có Referer
+    }
+}
+
+<h1>Xóa hóa đơn</h1>
+
+<h3>Bạn có chắc chắn muốn xóa hóa đơn này không?</h3>
+<div>
+    <h4>Thông tin Hóa đơn</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Taikhoanid)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Taikhoanid)
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Ngaylap)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Ngaylap)
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Tongtien)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Tongtien)
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Hinhthucthanhtoan)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Hinhthucthanhtoan)
+        </dd>
+
+        <dt class="col-sm-2">
+            Trạng thái
+        </dt>
+        <dd class="col-sm-10">
+            @(Model.Trangthai?.Tentrangthai ?? Model.Trangthaiid.ToString())
+        </dd>
+
+        <dt class="col-sm-2">
+            Mã đặt bàn
+        </dt>
+        <dd class="col-sm-10">
+            @Model.Datban?.Datbanid
+        </dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Hoadonid" />
+        <input type="submit" value="Xóa" class="btn btn-danger" /> |
+        <a href="@returnUrl" class="btn btn-secondary">Quay lại</a>
+    </form>
+</div>

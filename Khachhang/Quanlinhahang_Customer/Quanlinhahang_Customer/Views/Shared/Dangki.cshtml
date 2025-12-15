@@ -1,0 +1,67 @@
+﻿<form id="registerForm">
+    <div class="form-group">
+        <label for="regFullName">Họ và tên *</label>
+        <div class="input-wrapper">
+            <input type="text" id="regFullName" name="fullName" placeholder="Nguyễn Văn A" required />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="regEmail">Email *</label>
+        <div class="input-wrapper">
+            <input type="email" id="regEmail" name="email" placeholder="example@domain.com" required />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="regPhone">Số điện thoại *</label>
+        <div class="input-wrapper">
+            <input type="tel" id="regPhone" name="phone" placeholder="VD: 0901234567" required />
+        </div>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+
+    <div class="form-group">
+        <label for="regUsername">Tên đăng nhập *</label>
+        <div class="input-wrapper">
+            <input type="text" id="regUsername" name="username" placeholder="Tên dùng để đăng nhập" required />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="regPassword">Mật khẩu *</label>
+        <div class="input-wrapper">
+            <input type="password" id="regPassword" name="password" placeholder="Nhập mật khẩu (ít nhất 6 ký tự)" required />
+            <span class="toggle-password" id="togglePasswordReg">👁</span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="regConfirmPassword">Xác nhận mật khẩu *</label>
+        <div class="input-wrapper">
+            <input type="password" id="regConfirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" required />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="regAddress">Địa chỉ (Tùy chọn)</label>
+        <div class="input-wrapper">
+            <input type="text" id="regAddress" name="address" placeholder="Ví dụ: 100 Phố ABC, Quận XYZ" />
+        </div>
+    </div>
+    <div id="registerError" class="error-message" style="display:none; max-width: 600px; margin: 0 auto;"></div>
+    <div id="registerSuccess" class="success-message" style="display:none; max-width: 600px; margin: 0 auto;"></div>
+
+    <form id="registerForm">
+        <button type="submit" class="submit-btn">Đăng ký tài khoản</button>
+
+        <div class="register-link">
+            Đã có tài khoản?
+            <a asp-controller="Home" asp-action="GioiThieu">Đăng nhập ngay</a>
+        </div>
+    </form>
+</form>
+@section Scripts {
+	<script src="~/js/dangki-jquery.js" asp-append-version="true"></script>
+}

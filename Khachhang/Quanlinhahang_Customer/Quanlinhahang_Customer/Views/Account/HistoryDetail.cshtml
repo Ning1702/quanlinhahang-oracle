@@ -1,0 +1,252 @@
+﻿@model Quanlinhahang.Data.Models.Datban
+@using Quanlinhahang.Data.Models
+@using System.Collections.Generic
+@using System.Linq
+
+@{
+    ViewData["Title"] = $"Chi tiết Đơn hàng #{Model.Datbanid}";
+    var hoaDon = Model.Hoadons.FirstOrDefault();
+    bool canEdit = (Model.Trangthai == "Chờ xác nhận" && (hoaDon == null || hoaDon.Trangthaiid == 1));
+    var danhSachBan = ViewBag.DanhSachBan as List<Banphong> ?? new List<Banphong>();
+    var danhSachMonAn = ViewBag.DanhSachMonAn as List<Monan> ?? new List<Monan>();
+    var danhSachDanhMuc = danhSachMonAn
+        .Where(m => m.Danhmuc != null)
+        .GroupBy(m => m.Danhmucid)
+        .Select(g => g.First().Danhmuc)
+        .OrderBy(d => d.Danhmucid)
+        .ToList();
+
+    var itemsList = (hoaDon?.Chitiethoadons ?? new List<Chitiethoadon>());
+
+    var itemsToShow = itemsList.Select(ct => new
+    {
+        monAnId = ct.Monanid,
+        tenMon = ct.Monan?.Tenmon,
+        soLuong = ct.Soluong,
+        donGia = ct.Dongia,
+        thanhTien = ct.Thanhtien
+    });
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/account-info.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/history.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/history-detail.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/datban-map.css" asp-append-version="true" />
+}
+
+<div class="register-container">
+    <div id="historyDetailPage">
+
+        <h2 class="history-title">Chi tiết Đơn hàng: #@Model.Datbanid</h2>
+
+        <form id="updateBookingForm" onsubmit="return false;">
+            <div class="history-content">
+                <div id="infoError" class="error-message" style="display:none;"></div>
+                <div id="infoSuccess" class="success-message" style="display:none;"></div>
+
+                <fieldset id="infoFieldset" disabled>
+                    <div class="detail-grid">
+                        <div class="detail-box">
+                            <h3>Thông tin Đặt bàn</h3>
+                            <div class="form-group">
+                                <label>Trạng thái</label>
+                                <input type="text" class="form-input" value="@(hoaDon?.Trangthai?.Tentrangthai ?? Model.Trangthai)" readonly />
+                            </div>
+                            <div class="form-group">
+                                <label>Ngày đến</label>
+                                <input type="date" id="bookingDate" class="form-input" value="@Model.Ngayden.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Khung giờ</label>
+                                <select id="timeSlot" class="form-select" required>
+                                    <option value="Trua" selected="@(Model.Khunggio?.Tenkhunggio == "Trưa")">Trưa (11:00 - 13:30)</option>
+                                    <option value="Toi" selected="@(Model.Khunggio?.Tenkhunggio == "Tối")">Tối (18:00 - 21:30)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Số người</label>
+                                <input type="number" id="guestCount" class="form-input" value="@Model.Songuoi" min="1" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Bàn/Phòng</label>
+                                <div class="selected-table-display" id="selectedTableDisplay">@(Model.Banphong?.Tenbanphong ?? "Chưa chọn bàn")</div>
+                                <button type="button" class="btn-select-table" id="openTableMapBtn">Thay đổi bàn</button>
+                                <input type="hidden" id="selectedBanPhongId" value="@Model.Banphongid" />
+                            </div>
+                        </div>
+
+                        <div class="detail-box">
+                            <h3>Thông tin Khách hàng</h3>
+                            <p><strong>Họ và tên:</strong> <span>@(Model.Khachhang?.Hoten ?? "N/A")</span></p>
+                            <p><strong>Số điện thoại:</strong> <span>@(Model.Khachhang?.Sodienthoai ?? "N/A")</span></p>
+                            <p><strong>Email:</strong> <span>@(Model.Khachhang?.Email ?? "N/A")</span></p>
+                        </div>
+                    </div>
+
+                    <div class="detail-box" style="margin-top: 20px;">
+                        <h3>Chi tiết Món ăn</h3>
+
+                        <table class="order-details-table">
+                            <thead>
+                                <tr>
+                                    <th>Món ăn</th>
+                                    <th class="align-right">Giá</th>
+                                    <th style="text-align:center;">Số lượng</th>
+                                    <th class="align-right">Thành tiền</th>
+                                    <th style="width: 50px; text-align: center;">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summaryBodyItems">
+                                @* JS sẽ render danh sách món ăn vào đây *@
+                            </tbody>
+                        </table>
+
+                        <div class="add-item-row" id="openAddMonAnModal">
+                            + Thêm món
+                        </div>
+
+                        <div class="summary-total" style="border-top: 1px solid #444; padding-top: 15px;">
+                            <span>Tổng cộng (Dự kiến):</span>
+                            <span class="total-amount" id="summaryTotal">@(hoaDon?.Tongtien.ToString("n0") ?? "0")đ</span>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="button-group" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <a asp-action="History" asp-controller="Account" class="back-link" style="color: #c59d5f;">
+                        ← Quay lại Lịch sử
+                    </a>
+                    <div>
+                        @if (canEdit)
+                        {
+                            <button type="button" class="btn-submit" id="btnEdit" style="background-color: var(--primary-color, #ffd700); color: #000;">Chỉnh sửa đơn</button>
+
+                            <button type="button" class="btn-submit" id="btnSave" style="display:none;">Lưu thay đổi</button>
+
+                            <button type="button" class="btn-reset" id="btnCancel" style="display:none;">Hủy</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* --- MODAL CHỌN BÀN --- *@
+<div class="modal" id="tableMapModal">
+    <div class="modal-content table-modal-content">
+        <button class="close-btn" id="closeTableMapModal">&times;</button>
+        <div class="modal-header">
+            <h2>Sơ đồ Nhà hàng</h2>
+            <p>Chọn vị trí bàn phù hợp với sở thích của bạn.</p>
+        </div>
+
+        <div class="restaurant-floor-plan">
+            <div class="area-entrance"></div>
+            <div class="area-window">🪟 Cửa sổ kính (View đường phố)</div>
+
+            <div class="table-map-grid">
+                @foreach (var ban in danhSachBan)
+                {
+                    string trangThaiClass = (!ban.Trangthai) ? "trống" : "da-dat";
+                    bool isAvailable = !ban.Trangthai;
+                    <div class="table-card @trangThaiClass"
+                         data-id="@ban.Banphongid"
+                         data-name="@ban.Tenbanphong"
+                         data-available="@isAvailable.ToString().ToLower()"
+                         title="@ban.Tenbanphong (@ban.Succhua ghế)">
+                        <div class="table-card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M4 18v3h3v-3h10v3h3v-6H4v3zm16-8h-2V7c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v3H4v6h16v-6z" />
+                            </svg>
+                        </div>
+                        <div class="table-card-name">@ban.Tenbanphong</div>
+                        <div class="table-card-capacity">(@ban.Succhua người)</div>
+                    </div>
+                }
+            </div>
+            <div class="area-kitchen">👨‍🍳 Khu vực Bếp & Quầy Bar</div>
+        </div>
+
+        <div class="map-legend">
+            <div class="legend-item"><div class="legend-color available"></div><span>Trống</span></div>
+            <div class="legend-item"><div class="legend-color occupied"></div><span>Bận</span></div>
+            <div class="legend-item"><div class="legend-color selected"></div><span>Đang chọn</span></div>
+        </div>
+    </div>
+</div>
+
+@* --- MODAL THÊM MÓN --- *@
+<div class="modal" id="addMonAnModal">
+    <div class="modal-content table-modal-content">
+        <button class="close-btn" id="closeAddMonAnModal">&times;</button>
+        <div class="modal-header">
+            <h2>Thực đơn</h2>
+            <p>Chọn món để thêm vào đơn hàng.</p>
+        </div>
+
+        <div class="menu-modal-layout">
+            <div class="menu-modal-sidebar">
+                <button class="category-btn active" data-category-id="all">Tất cả</button>
+                @foreach (var danhMuc in danhSachDanhMuc)
+                {
+                    <button class="category-btn" data-category-id="@danhMuc.Danhmucid">
+                        @danhMuc.Tendanhmuc
+                    </button>
+                }
+            </div>
+
+            <div class="monan-list-container" id="addMonAnList">
+                @foreach (var mon in danhSachMonAn)
+                {
+                    string folder = (mon.Loaimon == "Combo") ? "Setmonan" : "Monan";
+                    // Đường dẫn ảo /shared/
+                    string imagePath = $"/shared/{folder}/{(mon.Hinhanhurl ?? "default.jpg")}";
+
+                    <div class="monan-item" data-monan-category-id="@mon.Danhmucid">
+                        <img class="monan-item-img"
+                             src="@imagePath"
+                             alt="@mon.Tenmon"
+                             onerror="this.src='/shared/Monan/default.jpg';" />
+
+                        <div class="monan-item-info">
+                            <strong>@mon.Tenmon</strong>
+                            <span>@mon.Dongia.ToString("n0")đ</span>
+                        </div>
+
+                        <button type="button" class="btn-add-mon"
+                                data-id="@mon.Monanid"
+                                data-name="@mon.Tenmon"
+                                data-price="@mon.Dongia">
+                            Chọn
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var originalItemsData = @Html.Raw(Json.Serialize(itemsToShow));
+        var serverDatBanId = @Model.Datbanid;
+
+        if (typeof window.getAuthState !== 'function') {
+            window.getAuthState = function() {
+                var localAuth = localStorage.getItem("user") || localStorage.getItem("account") || localStorage.getItem("auth");
+
+                if (localAuth) {
+                    return localAuth; 
+                }
+
+                var currentUser = '@(User.Identity?.Name ?? "")';
+                return JSON.stringify({
+                    username: (currentUser === "") ? "Guest" : currentUser
+                });
+            };
+        }
+    </script>
+    <script src="~/js/history-detail.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,130 @@
+﻿@using Quanlinhahang_Customer.Models.ViewModels
+@model MenuViewModel
+
+@{
+    ViewBag.Title = "Thực đơn";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<header class="site-header">
+    <div class="header-left">
+        <h1>Thực đơn Nhà hàng BTL</h1>
+        <p class="tagline">Thưởng thức tinh hoa ẩm thực Á - Âu</p>
+    </div>
+
+    <div class="header-center">
+        <form method="get" asp-action="Menu" asp-controller="Home" class="header-center" onsubmit="return false;">
+            <input type="text" id="search-box" name="search" value="@Model.Search" placeholder="🔍Tìm kiếm món ăn, combo..." />
+            @{
+                var items = new SelectList(Model.DanhMucList, "Danhmucid", "Tendanhmuc", Model.DanhMucId);
+            }
+            @Html.DropDownListFor(m => m.DanhMucId, items, "Tất cả danh mục", new { id = "filter-cat" })
+        </form>
+    </div>
+
+    <div class="header-right">
+        <button class="cart-btn" id="cartBtn">
+            <span class="cart-icon-text">🛒Giỏ hàng</span> <span id="cart-count">0</span>
+        </button>
+    </div>
+</header>
+
+<div class="container-menu">
+
+    <section class="menu-section" id="combo-section">
+        <h2>Combo đặc biệt</h2>
+        <p class="subhead">Những set menu được thiết kế cân đối, tiết kiệm hơn so với gọi lẻ.</p>
+
+        <div class="menu-grid">
+            @foreach (var mon in Model.MonAnList.Where(m => m.Loaimon == "Combo"))
+            {
+                // [SỬA]: Folder tên là Setmonan (khớp với thư mục thật trong SharedImages)
+                string folder = "Setmonan";
+                string imageName = mon.Hinhanhurl ?? "default.jpg";
+
+                // [SỬA QUAN TRỌNG]: Đổi /images/ thành /shared/
+                string imagePath = $"/shared/{folder}/{imageName}";
+
+                <article class="menu-card" data-cat="@mon.Danhmucid" data-search="@($"{mon.Tenmon} {mon.Mota}")">
+                    <div class="card-media">
+                        <img src="@imagePath"
+                             alt="@mon.Tenmon"
+                             @* [SỬA]: Đường dẫn ảnh lỗi cũng phải trỏ về /shared *@
+                             onerror="this.src='/shared/Monan/default.jpg'"
+                             class="img-fluid" />
+                    </div>
+                    <div class="card-body">
+                        <h3>@mon.Tenmon</h3>
+                        <p class="desc">@mon.Mota</p>
+                        <div class="price-row">
+                            <span class="new-price">@mon.Dongia.ToString("n0") ₫</span>
+                        </div>
+                        <button class="order-btn" data-id="@mon.Monanid" data-name="@mon.Tenmon" data-price="@mon.Dongia">
+                            Thêm vào giỏ
+                        </button>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="menu-section" id="alacarte-section">
+        <h2>Món gọi lẻ (A la carte)</h2>
+        <p class="subhead">Tự do lựa chọn từng món ăn theo sở thích của bạn.</p>
+
+        <div class="menu-grid">
+            @foreach (var mon in Model.MonAnList.Where(m => m.Loaimon != "Combo"))
+            {
+                string folder = "Monan";
+                string imageName = mon.Hinhanhurl ?? "default.jpg";
+
+                // [SỬA QUAN TRỌNG]: Đổi /images/ thành /shared/
+                string imagePath = $"/shared/{folder}/{imageName}";
+
+                <article class="menu-card" data-cat="@mon.Danhmucid" data-search="@($"{mon.Tenmon} {mon.Mota}")">
+                    <div class="card-media">
+                        <img src="@imagePath"
+                             alt="@mon.Tenmon"
+                             @* [SỬA]: Đường dẫn ảnh lỗi *@
+                             onerror="this.src='/shared/Monan/default.jpg'"
+                             class="img-fluid" />
+                    </div>
+                    <div class="card-body">
+                        <h3>@mon.Tenmon</h3>
+                        <p class="desc">@mon.Mota</p>
+                        <div class="price-row">
+                            <span class="new-price">@mon.Dongia.ToString("n0") ₫</span>
+                        </div>
+                        <button class="order-btn" data-id="@mon.Monanid" data-name="@mon.Tenmon" data-price="@mon.Dongia">
+                            Thêm vào giỏ
+                        </button>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</div>
+
+<div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+        <h3>Giỏ hàng</h3>
+        <button id="close-cart">&times;</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+        <div class="cart-total">
+            <span>Tổng cộng:</span>
+            <span id="cartTotal">0đ</span>
+        </div>
+        <div class="cart-actions">
+            <button class="btn alt" id="clearCart">Xóa hết</button>
+            <button class="btn" id="checkoutBtn">Thanh toán</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast">Đã thêm vào giỏ hàng</div>
+
+@section Scripts {
+    <script src="~/js/menu-jquery.js" asp-append-version="true"></script>
+}

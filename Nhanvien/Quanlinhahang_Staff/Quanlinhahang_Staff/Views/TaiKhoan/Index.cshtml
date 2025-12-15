@@ -1,0 +1,160 @@
+﻿@model Quanlinhahang_Staff.Models.ViewModels.TaiKhoanStaffVM
+
+@{
+    ViewData["Title"] = "Thông tin tài khoản";
+}
+
+<div class="container mt-4" style="max-width: 650px;">
+    <h3 class="fw-bold mb-4">Thông tin tài khoản</h3>
+
+    <form id="accountForm" method="post" asp-action="CapNhat">
+        <input type="hidden" asp-for="NhanVienID" />
+        <input type="hidden" asp-for="TaiKhoanID" />
+
+        <div class="card mb-3">
+            <div class="card-header fw-bold">👤 Thông tin cá nhân</div>
+            <div class="card-body">
+                <label class="form-label">Họ tên</label>
+                <input asp-for="HoTen" class="form-control form-input" readonly />
+
+                <label class="form-label mt-3">Số điện thoại</label>
+                <input asp-for="SoDienThoai" class="form-control form-input" readonly />
+
+                <label class="form-label mt-3">Chức vụ</label>
+                <input asp-for="ChucVu" class="form-control" readonly />
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header fw-bold">🔐 Thông tin đăng nhập</div>
+            <div class="card-body">
+                <label class="form-label">Tên đăng nhập</label>
+                <input asp-for="TenDangNhap" class="form-control form-input" readonly />
+
+                <label class="form-label mt-3">Email</label>
+                <input asp-for="Email" class="form-control form-input" readonly />
+
+                <label class="form-label mt-3">Mật khẩu</label>
+                <div class="input-group">
+                    <input type="password"
+                           id="txtPassword"
+                           name="NewPassword"
+                           class="form-control form-input"
+                           value="********"
+                           readonly
+                           placeholder="Nhập mật khẩu mới (nếu muốn đổi)" />
+
+                    <button type="button" class="btn btn-outline-secondary" id="btnTogglePass" disabled>
+                        <span id="iconEye">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" /><path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" /></svg>
+                        </span>
+                        <span id="iconEyeSlash" style="display:none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7.029 7.029 0 0 0 2.79-.588zM5.21 3.088A7.028 7.028 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474L5.21 3.089z" /><path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829l-2.83-2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12-.708.708z" /></svg>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-3">
+            <div id="editOnlyWrapper">
+                <button type="button" id="btnEdit" class="btn btn-primary px-4">
+                    Chỉnh sửa thông tin
+                </button>
+
+                <a asp-action="Logout" asp-controller="TaiKhoan" class="btn btn-danger px-4">
+                    Đăng xuất
+                </a>
+            </div>
+
+            <div id="editButtons" style="display:none; margin-top: 15px;">
+                <button type="button" id="btnCancel" class="btn btn-secondary px-4 me-2">Hủy</button>
+                <button type="submit" id="btnSave" class="btn btn-success px-4">Cập nhật</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const inputs = document.querySelectorAll(".form-input");
+        const original = {};
+
+        // Lưu giá trị ban đầu (Họ tên, email...)
+        inputs.forEach(x => original[x.name] = x.value);
+
+        // Nút Mắt thần và Ô mật khẩu
+        const btnEye = document.getElementById("btnTogglePass");
+        const txtPass = document.getElementById("txtPassword");
+        const iconEye = document.getElementById("iconEye");
+        const iconSlash = document.getElementById("iconEyeSlash");
+
+        // --- 1. SỰ KIỆN BẤM CHỈNH SỬA ---
+        document.getElementById("btnEdit").addEventListener("click", function () {
+            // Mở khóa các ô input
+            inputs.forEach(x => x.readOnly = false);
+
+            // Riêng ô Mật khẩu: Xóa trắng, bật nút mắt lên
+            txtPass.value = "";
+            btnEye.disabled = false;
+
+            // Đổi nút bấm
+            document.getElementById("editOnlyWrapper").style.display = "none";
+            document.getElementById("editButtons").style.display = "block";
+        });
+
+        // --- 2. SỰ KIỆN BẤM HỦY ---
+        document.getElementById("btnCancel").addEventListener("click", function () {
+            // Khóa lại các ô input, trả về giá trị cũ
+            inputs.forEach(x => {
+                x.readOnly = true;
+                x.value = original[x.name];
+            });
+
+            // Riêng ô Mật khẩu: Trả về "********", khóa nút mắt, reset về dạng chấm tròn
+            txtPass.value = "********";
+            txtPass.type = "password";
+            btnEye.disabled = true;
+
+            // Reset icon mắt về trạng thái đóng
+            iconEye.style.display = "inline";
+            iconSlash.style.display = "none";
+
+            // Đổi nút bấm
+            document.getElementById("editOnlyWrapper").style.display = "block";
+            document.getElementById("editButtons").style.display = "none";
+        });
+
+        // --- 3. SỰ KIỆN BẤM MẮT THẦN (ẨN/HIỆN) ---
+        btnEye.addEventListener("click", function() {
+            if (txtPass.type === "password") {
+                // Đang ẩn -> Hiện chữ
+                txtPass.type = "text";
+                iconEye.style.display = "none";
+                iconSlash.style.display = "inline";
+            } else {
+                // Đang hiện -> Ẩn thành chấm
+                txtPass.type = "password";
+                iconEye.style.display = "inline";
+                iconSlash.style.display = "none";
+            }
+        });
+    });
+</script>
+
+@section Scripts {
+    <script>
+        @if (TempData["update"] != null)
+        {
+                <text>
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công!',
+                        text: '@Html.Raw(TempData["msg"])',
+                        confirmButtonText: 'Đồng ý'
+                    });
+                </text>
+        }
+    </script>
+}

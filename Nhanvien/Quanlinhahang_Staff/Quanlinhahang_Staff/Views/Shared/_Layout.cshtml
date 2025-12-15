@@ -1,0 +1,365 @@
+﻿@* ============================================
+   _Layout.cshtml - DARK & GOLD THEME
+   ============================================ *@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Quản lý nhà hàng</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Quanlinhahang_Staff.styles.css" asp-append-version="true" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        /* --- ĐỊNH NGHĨA BIẾN MÀU --- */
+        :root {
+            --main-bg-color: #121212;
+            --accent-color: #c7a368; /* Màu vàng gold */
+            --text-color-primary: #ffffff; /* Màu trắng */
+            --sidebar-bg: #1a1a1a;
+            --input-bg: #1e1e1e;
+        }
+
+        body {
+            overflow-x: hidden;
+            font-family: "Segoe UI", sans-serif;
+            background-color: var(--main-bg-color);
+            color: var(--text-color-primary);
+        }
+
+        /* --- SỬA LỖI 2: VIỀN TRÊN CỦA BẢNG VẪN TRẮNG --- */
+        .table {
+            color: #ffffff !important;
+            border-color: var(--accent-color) !important;
+            margin-bottom: 0;
+        }
+
+            /* Ép tất cả các cạnh của ô tiêu đề thành màu vàng */
+            .table thead th {
+                background-color: #222 !important;
+                color: var(--accent-color) !important;
+                border-top: 1px solid var(--accent-color) !important; /* Sửa lỗi viền trên trắng */
+                border-bottom: 2px solid var(--accent-color) !important; /* Viền dưới đậm hơn chút */
+                border-left: 1px solid var(--accent-color) !important; /* Viền trái */
+                border-right: 1px solid var(--accent-color) !important; /* Viền phải */
+                vertical-align: middle;
+            }
+
+            .table tbody td {
+                color: #ffffff !important;
+                border: 1px solid var(--accent-color) !important; /* Viền bao quanh các ô dữ liệu */
+                vertical-align: middle;
+            }
+
+        .table-hover tbody tr:hover {
+            background-color: #333 !important;
+        }
+
+
+        /* --- SỬA LỖI 1: CHỮ SIDEBAR THÀNH MÀU TRẮNG --- */
+        #sidebar-wrapper .list-group-item {
+            background-color: transparent;
+            color: #ffffff !important; /* Ép chữ thành màu trắng */
+            border: none;
+            font-weight: 500;
+        }
+
+            /* Icon bên cạnh chữ cũng trắng luôn cho đẹp */
+            #sidebar-wrapper .list-group-item i {
+                color: #ffffff !important;
+                margin-right: 10px;
+            }
+
+            /* Khi di chuột vào thì đổi sang màu Vàng */
+            #sidebar-wrapper .list-group-item:hover {
+                background-color: #333;
+                color: var(--accent-color) !important;
+            }
+
+                #sidebar-wrapper .list-group-item:hover i {
+                    color: var(--accent-color) !important;
+                }
+
+
+        /* --- CÁC PHẦN KHÁC (TAB, INPUT...) --- */
+        .nav-tabs, .nav-pills {
+            border-bottom: 1px solid var(--accent-color) !important;
+        }
+
+        .nav-link {
+            color: #aaaaaa !important;
+            border: 1px solid transparent !important;
+        }
+
+            .nav-link:hover {
+                color: var(--accent-color) !important;
+            }
+
+            .nav-link.active {
+                background-color: var(--accent-color) !important;
+                color: #000000 !important;
+                border-color: var(--accent-color) !important;
+                font-weight: bold;
+            }
+
+        h1, h2, h3, h4, h5, h6, .sidebar-heading {
+            color: var(--accent-color) !important;
+            font-weight: 600;
+        }
+
+        .form-control, .form-select {
+            background-color: var(--input-bg) !important;
+            border: 1px solid var(--accent-color) !important;
+            color: #ffffff !important;
+        }
+
+            .form-control:focus {
+                border-color: #e0bd7c !important;
+                box-shadow: 0 0 0 0.25rem rgba(199, 163, 104, 0.25);
+            }
+
+        .btn-primary {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: #000 !important;
+            font-weight: bold;
+        }
+
+        /* Layout Sidebar */
+        #wrapper {
+            display: flex;
+            width: 100%;
+        }
+
+        #sidebar-wrapper {
+            min-width: 220px;
+            max-width: 220px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--accent-color);
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+            transition: margin 0.25s ease-out;
+        }
+
+        .sidebar-heading {
+            padding: 1rem 0;
+            text-align: center;
+            border-bottom: 1px solid var(--accent-color);
+        }
+
+        #page-content-wrapper {
+            flex-grow: 1;
+            margin-left: 220px;
+            width: 100%;
+            transition: margin 0.25s ease-out;
+            background-color: var(--main-bg-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        body.sb-sidenav-toggled #sidebar-wrapper {
+            margin-left: -220px;
+        }
+
+        body.sb-sidenav-toggled #page-content-wrapper {
+            margin-left: 0;
+        }
+
+        .navbar-custom {
+            /* Thay #000000 bằng #121212 (màu nền chính của web) */
+            background-color: #1a1a1a !important;
+            border-bottom: 1px solid var(--accent-color) !important;
+            
+            /* Thay viền trên cũng thành #121212 luôn */
+            border-top: 1px solid #1a1a1a !important;
+        }
+
+        .navbar-brand {
+            color: var(--accent-color) !important;
+            font-weight: bold;
+        }
+
+        .btn-outline-light {
+            border-color: var(--accent-color) !important;
+            color: var(--accent-color) !important;
+        }
+
+        footer {
+            background-color: #1e1e1e;
+            border-top: 1px solid var(--accent-color);
+            text-align: center;
+            padding: 10px;
+            margin-top: auto;
+            color: #888;
+        }
+
+        @@media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: -220px;
+            }
+
+            #page-content-wrapper {
+                margin-left: 0;
+            }
+
+            body.sb-sidenav-toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+        }
+        /* --- FIX LỖI: 3 HÀNG TỔNG TIỀN BỊ TRẮNG --- */
+
+        /* 1. Xử lý trường hợp dùng thẻ tfoot */
+        .table tfoot th,
+        .table tfoot td {
+            background-color: var(--main-bg-color) !important; /* Nền đen */
+            color: #ffffff !important; /* Chữ trắng */
+            border: 1px solid var(--accent-color) !important; /* Viền vàng */
+        }
+
+        /* 2. Xử lý trường hợp dòng có class bg-white (nếu code HTML đang gán cứng) */
+        .table .bg-white {
+            background-color: var(--main-bg-color) !important;
+            color: #ffffff !important;
+        }
+
+        /* Tùy chỉnh thêm: Làm đậm số tiền "Thành tiền" */
+        .table tfoot tr:last-child td {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--accent-color) !important; /* Riêng dòng Thành tiền cho chữ màu vàng */
+        }
+
+        /* --- SỬA GIAO DIỆN FORM TÀI KHOẢN (CARD) --- */
+        /* Chuyển nền Card từ trắng sang Vàng Gold */
+        .card {
+            background-color: var(--accent-color) !important; /* Nền màu vàng #c7a368 */
+            border: 1px solid var(--accent-color) !important;
+        }
+
+        /* Vì nền đã là vàng, chữ tiêu đề và nhãn (label) phải chuyển sang đen để dễ đọc */
+        .card-header {
+            background-color: rgba(0, 0, 0, 0.1) !important; /* Làm tối header một chút cho có điểm nhấn */
+            color: #000000 !important;
+            border-bottom: 1px solid #000000 !important;
+            font-weight: bold;
+        }
+
+        .card-body {
+            color: #000000 !important; /* Màu chữ các nhãn (Họ tên, SĐT...) thành đen */
+        }
+
+        /* Tùy chỉnh Input khi nằm trên nền vàng (giữ nguyên nền đen, viền đen cho nổi) */
+        .card .form-control {
+            border-color: #000000 !important;
+        }
+
+        /* --- CSS CHO LOGO MỚI --- */
+        .navbar-brand.p-0 {
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-logo-img {
+            /* Giảm chiều cao xuống cho vừa vặn hơn */
+            max-height: 40px; /* <-- THAY ĐỔI SỐ NÀY (ví dụ: 35px, 40px) */
+            width: auto;
+            object-fit: contain;
+            margin-right: 15px; /* Thêm khoảng cách bên phải cho thoáng */
+        }
+
+    </style>
+</head>
+
+<body>
+    <script>
+        // Kiểm tra ngay lập tức khi trình duyệt bắt đầu vẽ Body
+        if (localStorage.getItem('sb|sidebar-toggle') === 'true') {
+            document.body.classList.add('sb-sidenav-toggled');
+        }
+    </script>
+
+    <div id="wrapper">
+
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                Quản Lý Nhà hàng
+            </div>
+
+            <div class="list-group list-group-flush">
+                <a href="/Invoices" class="list-group-item list-group-item-action">
+                    <i class="fas fa-file-invoice"></i> Hóa đơn
+                </a>
+
+                <a href="/TaiKhoan" class="list-group-item list-group-item-action">
+                    <i class="fas fa-user"></i> Tài khoản
+                </a>
+            </div>
+        </div>
+
+        <div id="page-content-wrapper">
+
+            <header>
+                <nav class="navbar navbar-expand-sm navbar-dark navbar-custom shadow-sm mb-3">
+                    <div class="container-fluid">
+
+                        <button class="btn btn-outline-light me-3" id="sidebarToggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+
+                        <a class="navbar-brand p-0" asp-controller="Invoices" asp-action="Index">
+                            <img src="~/Logo/LogoChu2.png" alt="Dé Sounté Mountepré" class="navbar-logo-img">
+                        </a>
+
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                                data-bs-target=".navbar-collapse">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                    </div>
+                </nav>
+            </header>
+
+            <div class="container-fluid px-4">
+                <main role="main" class="pb-3 flex-grow-1">
+                    @RenderBody()
+                </main>
+            </div>
+            @*
+            <footer>
+                <div class="container">
+                    &copy; 2025 - Quản lý nhà hàng - Staff
+                </div>
+            </footer>
+            *@
+        </div>
+    </div>
+
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', event => {
+            const sidebarToggle = document.body.querySelector('#sidebarToggle');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', event => {
+                    event.preventDefault();
+                    document.body.classList.toggle('sb-sidenav-toggled');
+                    localStorage.setItem('sb|sidebar-toggle', document.body.classList.contains('sb-sidenav-toggled'));
+                });
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

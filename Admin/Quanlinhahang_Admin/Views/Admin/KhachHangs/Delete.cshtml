@@ -1,0 +1,38 @@
+﻿using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Quanlinhahang_Admin.Data;
+
+namespace Quanlinhahang_Admin.Areas.Admin.Controllers
+{
+    [Area("Admin")]
+    public class KhachHangsController : Controller
+    {
+        private readonly QlnhContext _ctx;
+        public KhachHangsController(QlnhContext ctx) => _ctx = ctx;
+
+        public async Task<IActionResult>
+    Index()
+    {
+    var data = await _ctx.KhachHangs.AsNoTracking().ToListAsync();
+    return View(data);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult>
+        Delete(int id)
+        {
+        var kh = await _ctx.KhachHangs.FindAsync(id);
+        if (kh == null) return NotFound();
+
+        // An toàn với FK nếu chưa ON DELETE SET NULL:
+        var dbs = await _ctx.DatBans.Where(x => x.KhachHangID == id).ToListAsync();
+        foreach (var d in dbs) d.KhachHangID = null;
+
+        _ctx.KhachHangs.Remove(kh);
+        await _ctx.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+        }
+        }
+        }

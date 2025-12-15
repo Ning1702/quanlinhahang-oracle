@@ -1,0 +1,47 @@
+﻿@* Layout dùng chung cho toàn bộ website Nhà hàng BTL *@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - Nhà hàng BTL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    @* CSS thư viện (nếu dự án dùng Bootstrap) *@
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+
+    @* CSS custom *@
+    <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/gioithieu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/menu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/datban.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/footer.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    @* Nếu từng trang muốn thêm CSS riêng thì dùng section Styles *@
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    @* NAVBAR CHUNG *@
+    <partial name="_Navbar" />
+
+    @* PHẦN NỘI DUNG TRANG CON *@
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    @* FOOTER CHUNG *@
+    <partial name="_Footer" />
+
+    @* JS thư viện *@
+	<script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    @* JS custom chung *@
+    <script src="~/js/navbar.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    @* JS riêng từng trang (Menu, Đặt bàn, Giới thiệu...) *@
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

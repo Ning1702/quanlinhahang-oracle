@@ -1,0 +1,681 @@
+﻿@model Quanlinhahang_Staff.Models.ViewModels.InvoiceEditVM
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Quanlinhahang.Data.Models
+@{
+    // SỬA: Đổi Namespace và tên class Entity (MonAn -> Monan)
+    var monAn = (List<Monan>)ViewBag.MonAn;
+    ViewData["Title"] = $"Sửa hóa đơn #{Model.HoaDonID}";
+
+    bool daThanhToan = (bool)(ViewBag.DaThanhToan ?? false);
+
+    string? trangThaiTen = ViewBag.TrangThai as string;
+    bool khongTheSua = daThanhToan;
+
+    int status = ViewBag.Status ?? 0;
+
+    // SỬA: Đổi BanPhong -> Banphong, BanPhongID -> Banphongid
+    var banPhongDaChon = ((List<Banphong>)ViewBag.BanPhongs)
+                            .FirstOrDefault(b => b.Banphongid == Model.BanPhongID);
+
+    // SỬA: TenBanPhong -> Tenbanphong
+    var tenBanDaChon = banPhongDaChon != null ? banPhongDaChon.Tenbanphong : "Không yêu cầu";
+}
+
+<h2 class="mt-3">Hóa đơn #@Model.HoaDonID</h2>
+
+@if (TempData["msg"] != null)
+{
+    <div class="alert alert-success">@TempData["msg"]</div>
+}
+
+<div class="row">
+
+
+    <div class="col-md-7">
+        <h5>Danh sách món</h5>
+
+        <table class="table table-bordered" id="tableItems">
+            <thead>
+                <tr>
+                    <th>Tên món</th>
+                    <th style="width:150px;text-align:center">SL</th>
+                    <th class="text-end" style="width:160px">Đơn giá</th>
+                    <th class="text-end">Thành tiền</th>
+                    <th style="width:80px"></th>
+                </tr>
+            </thead>
+
+            <tbody id="itemsBody">
+                @foreach (var i in Model.Items)
+                {
+                    <tr data-id="@i.MonAnID"
+                        data-ten="@i.TenMon"
+                        data-gia="@i.DonGia"
+                        data-sl="@i.SoLuong">
+
+                        <td>@i.TenMon</td>
+
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-secondary px-2 btn-minus">-</button>
+                                <span class="mx-2 fw-bold sl-val">@i.SoLuong</span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary px-2 btn-plus">+</button>
+                            </div>
+                        </td>
+
+                        <td class="text-end">@i.DonGia.ToString("#,0")</td>
+
+                        <td class="text-end thanh-tien">
+                            @((i.SoLuong * i.DonGia).ToString("#,0"))
+                        </td>
+
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-all">Xóa</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+
+            <tfoot class="table-light">
+                <tr>
+                    <td colspan="3" class="text-end fw-bold">Tạm tính:</td>
+                    <td class="text-end fw-bold" id="subTotal"></td>
+                    <td></td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" class="text-end">VAT (10%)</td>
+                    <td class="text-end" id="vat"></td>
+                </tr>
+
+                <tr class="h5">
+                    <td colspan="3" class="text-end fw-bold">Thành tiền:</td>
+                    <td class="text-end fw-bold" id="finalTotal"></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        @if (!khongTheSua)
+        {
+            <div class="row g-2 mt-2">
+                <div class="col-md-7">
+                    <select class="form-select" id="addItemSelect">
+                        <option value="">-- Chọn món --</option>
+                        @foreach (var m in monAn)
+                        {
+                            <option value="@m.Monanid"
+                                    data-ten="@m.Tenmon"
+                                    data-gia="@m.Dongia">
+                                @m.Tenmon (@m.Dongia.ToString("#,0"))
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <input type="number" id="addItemSL" class="form-control" min="1" value="1" />
+                </div>
+
+                <div class="col-md-2">
+                    <button type="button" id="btnAddItem" class="btn btn-primary w-100">
+                        Thêm
+                    </button>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+    <div class="col-md-5">
+        <h5>Thông tin thanh toán</h5>
+
+        <form method="post" asp-action="Save" asp-controller="Invoices" id="paymentForm">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="HoaDonID" />
+            <input type="hidden" asp-for="DatBanID" />
+            <input type="hidden" asp-for="BanPhongID" id="selectedBanPhongID" />
+            <input type="hidden" name="status" value="@ViewBag.Status" />
+
+            <fieldset>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Chọn bàn / phòng phục vụ</label>
+                    <div class="input-group">
+                        <input type="text" id="selectedBanPhongName"
+                               class="form-control"
+                               value="@tenBanDaChon" readonly />
+
+                        <button type="button"
+                                class="btn btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#banPhongModal"
+                                @((bool)ViewBag.DaThanhToan ? "disabled" : "")>
+                            Chọn
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Ngày đến</label>
+                        <input type="date"
+                               class="form-control"
+                               id="txtNgayDen"
+                               name="NewNgayDen"
+                               value="@ViewBag.NgayDenVal" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Khung giờ</label>
+                        <select class="form-select" id="ddlKhungGio" name="NewKhungGioID">
+                            @if (ViewBag.ListKhungGio != null)
+                            {
+                                foreach (var kg in ViewBag.ListKhungGio)
+                                {
+                                    var idVal = kg.GetType().GetProperty("Khunggioid") != null ? kg.Khunggioid : kg.KhungGioID;
+                                    var nameVal = kg.GetType().GetProperty("Tenkhunggio") != null ? kg.Tenkhunggio : kg.TenKhungGio;
+
+                                    if (ViewBag.KhungGioIdVal == idVal)
+                                    {
+                                        <option value="@idVal" selected>@nameVal</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@idVal">@nameVal</option>
+                                    }
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Hình thức thanh toán</label>
+                    <select class="form-select undo-field" asp-for="HinhThucThanhToan">
+                        <option value="">-- Chọn --</option>
+                        <option>Tiền mặt</option>
+                        <option>Thẻ</option>
+                        <option>QR</option>
+                    </select>
+                </div>
+
+            </fieldset>
+
+            <div class="mt-3 d-flex gap-2">
+                <button type="button" class="btn btn-warning" id="btnUndo" @((bool)ViewBag.DaThanhToan ? "disabled" : "")>Hoàn tác</button>
+                <button type="button" class="btn btn-secondary" id="btnRestore" @((bool)ViewBag.DaThanhToan ? "disabled" : "")>Khôi phục</button>
+                <button class="btn btn-success" id="btnSave" @((bool)ViewBag.DaThanhToan ? "disabled" : "")>Lưu</button>
+
+                <a class="btn btn-dark" href="@Url.Action("Index", new { status = ViewBag.Status })">Quay lại</a>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="modal fade" id="banPhongModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content" style="background:#1a1a1a; color:white; border:1px solid #444;">
+                <div class="modal-header border-secondary">
+                    <h4 class="modal-title">Sơ đồ Nhà hàng</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding:0 !important;">
+                    <div class="table-modal-content">
+                        <div class="area-entrance">🚪 CỬA VÀO CHÍNH</div>
+                        <div class="map-middle-area">
+                            <div class="area-window">🪟 CỬA SỔ KÍNH (VIEW ĐƯỜNG PHỐ)</div>
+                            <div class="table-map-grid" id="banPhongGrid">
+                            </div>
+                        </div>
+                        <div class="area-kitchen">👨‍🍳 KHU VỰC BẾP & QUẦY BAR</div>
+                    </div>
+                    <div class="map-legend">
+                        <div class="legend-item"><span class="legend-color available"></span> Trống</div>
+                        <div class="legend-item"><span class="legend-color occupied"></span> Đã đặt / Bận</div>
+                        <div class="legend-item"><span class="legend-color selected"></span> Đang chọn</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* ... (GIỮ NGUYÊN CSS CŨ) ... */
+        .table-modal-content {
+            width: 100%;
+            max-width: 1200px;
+            background: #1a1a1a;
+            border-radius: 14px;
+            border: 1px solid #333;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 75vh;
+            position: relative;
+        }
+
+        .area-entrance {
+            height: 65px;
+            background: #2b2b2b;
+            border-bottom: 2px solid #444;
+            color: #c59d5f;
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 1px;
+        }
+
+        .map-middle-area {
+            position: relative;
+            flex: 1;
+        }
+
+        .area-window {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 65px;
+            background: rgba(150, 200, 255, 0.14);
+            border-left: 2px solid #699bb8;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            color: #aee1ff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 15px;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .table-map-grid {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 65px;
+            padding: 24px 45px 24px 24px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+            gap: 22px;
+            background: #1a1a1a;
+        }
+
+        .table-card {
+            background: #2f2f2f;
+            border: 2px solid #555;
+            border-radius: 14px;
+            padding: 15px 10px;
+            cursor: pointer;
+            transition: 0.18s ease;
+            text-align: center;
+        }
+
+            .table-card.available:hover {
+                border-color: #c59d5f;
+                background: #3c3c3c;
+            }
+
+            .table-card.busy {
+                background: #362121;
+                border-color: #5b2b2b;
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            .table-card.selected {
+                background: #c59d5f !important;
+                border-color: #ffffff !important;
+                box-shadow: 0 0 12px rgba(255,255,255,0.7);
+                transform: scale(1.06);
+                color: #000 !important;
+                font-weight: 700;
+            }
+
+                .table-card.selected .table-card-icon svg {
+                    fill: #000 !important;
+                }
+
+                .table-card.selected .table-card-capacity {
+                    color: #222 !important;
+                }
+
+        .table-card-icon svg {
+            width: 38px;
+            height: 38px;
+            fill: #c59d5f !important;
+            margin-bottom: 8px;
+        }
+
+        .table-card-name {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+
+        .table-card-capacity {
+            color: #ccc;
+            font-size: 0.85rem;
+        }
+
+        .area-kitchen {
+            height: 65px;
+            background: repeating-linear-gradient(45deg, #333 0px, #333 10px, #444 10px, #444 20px);
+            color: #eee;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border-top: 3px solid #c59d5f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-legend {
+            padding: 14px 0;
+            display: flex;
+            justify-content: center;
+            gap: 22px;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+        }
+
+        .legend-item {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            color: #ddd;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+
+            .legend-color.available {
+                background: #444;
+                border: 1px solid #777;
+            }
+
+            .legend-color.occupied {
+                background: #2a1a1a;
+                border: 1px solid #552222;
+            }
+
+            .legend-color.selected {
+                background: #c59d5f;
+            }
+    </style>
+
+@section Scripts {
+        <script>
+            /* ============================================================
+               1) KHỞI TẠO DỮ LIỆU BAN ĐẦU
+            ============================================================ */
+            let originalItems = [];
+            document.querySelectorAll("#itemsBody tr").forEach(tr => {
+                originalItems.push({
+                    MonAnID: Number(tr.dataset.id),
+                    TenMon: tr.dataset.ten,
+                    DonGia: Number(tr.dataset.gia),
+                    SoLuong: Number(tr.dataset.sl)
+                });
+            });
+
+            const originalState = {
+                date: document.getElementById("txtNgayDen").value,
+                time: document.getElementById("ddlKhungGio").value,
+                tableId: document.getElementById("selectedBanPhongID").value,
+                tableName: document.getElementById("selectedBanPhongName").value
+            };
+
+            let currentItems = JSON.parse(JSON.stringify(originalItems));
+            let undoStack = [];
+            let tempFocusVal = "";
+
+            /* ============================================================
+               2) SNAPSHOT & RESTORE
+            ============================================================ */
+            function getSnapshot() {
+                return {
+                    items: JSON.parse(JSON.stringify(currentItems)),
+                    date: document.getElementById("txtNgayDen").value,
+                    time: document.getElementById("ddlKhungGio").value,
+                    tableId: document.getElementById("selectedBanPhongID").value,
+                    tableName: document.getElementById("selectedBanPhongName").value
+                };
+            }
+
+            function applySnapshot(snapshot) {
+                currentItems = JSON.parse(JSON.stringify(snapshot.items));
+                renderItems();
+
+                document.getElementById("txtNgayDen").value = snapshot.date;
+                document.getElementById("ddlKhungGio").value = snapshot.time;
+
+                document.getElementById("selectedBanPhongID").value = snapshot.tableId;
+                document.getElementById("selectedBanPhongName").value = snapshot.tableName;
+
+                highlightSelectedTable(snapshot.tableId);
+            }
+
+            function highlightSelectedTable(id) {
+                document.querySelectorAll(".table-card").forEach(c => c.classList.remove("selected"));
+                if (id) {
+                    let card = document.querySelector(`.table-card[data-id="${id}"]`);
+                    if (card) card.classList.add("selected");
+                }
+            }
+
+            function renderItems() {
+                let body = document.getElementById("itemsBody");
+                body.innerHTML = "";
+                currentItems.forEach(item => {
+                    let thanhTien = item.SoLuong * item.DonGia;
+                    body.innerHTML += `
+                        <tr data-id="${item.MonAnID}" data-ten="${item.TenMon}" data-gia="${item.DonGia}" data-sl="${item.SoLuong}">
+                            <td>${item.TenMon}</td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-minus px-2">-</button>
+                                    <span class="mx-2 fw-bold sl-val">${item.SoLuong}</span>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-plus px-2">+</button>
+                                </div>
+                            </td>
+                            <td class="text-end">${item.DonGia.toLocaleString()}</td>
+                            <td class="text-end thanh-tien">${thanhTien.toLocaleString()}</td>
+                            <td><button type="button" class="btn btn-sm btn-outline-danger btn-remove-all">Xóa</button></td>
+                        </tr>`;
+                });
+                tinhTien();
+            }
+
+            function tinhTien() {
+                let sub = 0;
+                currentItems.forEach(i => sub += i.SoLuong * i.DonGia);
+                let vat = sub * 0.10;
+                let final = sub + vat;
+                document.getElementById("subTotal").innerText = sub.toLocaleString();
+                document.getElementById("vat").innerText = vat.toLocaleString();
+                document.getElementById("finalTotal").innerText = final.toLocaleString();
+            }
+
+            /* ============================================================
+               3) EVENT LISTENER: ITEMS
+            ============================================================ */
+            document.addEventListener("click", function (e) {
+                let row = e.target.closest("tr");
+                if (row && row.closest("#itemsBody")) {
+                    let id = Number(row.dataset.id);
+                    let item = currentItems.find(x => x.MonAnID === id);
+
+                    if (e.target.classList.contains("btn-minus") || e.target.classList.contains("btn-plus") || e.target.classList.contains("btn-remove-all")) {
+                        undoStack.push(getSnapshot());
+                    }
+                    if (e.target.classList.contains("btn-minus")) { if (item.SoLuong > 1) { item.SoLuong--; renderItems(); } }
+                    if (e.target.classList.contains("btn-plus")) { item.SoLuong++; renderItems(); }
+                    if (e.target.classList.contains("btn-remove-all")) { currentItems = currentItems.filter(x => x.MonAnID !== id); renderItems(); }
+                }
+
+                if (e.target.id === "btnAddItem") {
+                    let select = document.getElementById("addItemSelect");
+                    let slInput = document.getElementById("addItemSL");
+                    if (!select.value) { Swal.fire("Vui lòng chọn món!"); return; }
+
+                    undoStack.push(getSnapshot());
+
+                    let id = Number(select.value);
+                    let ten = select.options[select.selectedIndex].dataset.ten;
+                    let gia = Number(select.options[select.selectedIndex].dataset.gia);
+                    let sl = Number(slInput.value);
+                    let exist = currentItems.find(x => x.MonAnID === id);
+                    if (exist) exist.SoLuong += sl;
+                    else currentItems.push({ MonAnID: id, TenMon: ten, DonGia: gia, SoLuong: sl });
+                    renderItems();
+                }
+            });
+
+            /* ============================================================
+               4) EVENT LISTENER: NGÀY & GIỜ
+            ============================================================ */
+            const dateInput = document.getElementById("txtNgayDen");
+            const timeInput = document.getElementById("ddlKhungGio");
+
+            function onInputFocus(e) { tempFocusVal = e.target.value; }
+
+            function onInputChange(e) {
+                let prevSnapshot = getSnapshot();
+                if (e.target.id === "txtNgayDen") prevSnapshot.date = tempFocusVal;
+                if (e.target.id === "ddlKhungGio") prevSnapshot.time = tempFocusVal;
+                undoStack.push(prevSnapshot);
+                tempFocusVal = e.target.value;
+            }
+
+            dateInput.addEventListener("focus", onInputFocus);
+            dateInput.addEventListener("change", onInputChange);
+            timeInput.addEventListener("focus", onInputFocus);
+            timeInput.addEventListener("change", onInputChange);
+
+            /* ============================================================
+               5) EVENT LISTENER: CHỌN BÀN
+            ============================================================ */
+            document.querySelector("[data-bs-target='#banPhongModal']").addEventListener("click", function() {
+                fetch(`/Invoices/GetBanPhong?hoaDonId=@Model.HoaDonID`)
+                    .then(res => res.json())
+                    .then(list => {
+                        renderBanPhongGrid(list);
+                        highlightSelectedTable(document.getElementById("selectedBanPhongID").value);
+                    });
+            });
+
+            function renderBanPhongGrid(data) {
+                let html = "";
+                data.forEach(b => {
+                    // SỬA: Cập nhật tên thuộc tính JSON (thường là chữ thường nếu Entity đã sửa tên)
+                    // Bạn nên kiểm tra console.log(data) để biết chính xác.
+                    // Ở đây tôi dùng dự phòng 'b.banphongid' (JSON camelCase) hoặc 'b.Banphongid' (PascalCase)
+
+                    let bid = b.banphongid || b.Banphongid || b.banPhongID;
+                    let bname = b.tenbanphong || b.Tenbanphong || b.tenBanPhong;
+                    let bseat = b.sochongoi || b.Sochongoi || b.soChoNgoi;
+                    let bstatus = b.trangThai || b.TrangThai || "Trống"; // Giữ nguyên fallback
+
+                    const isAvailable = bstatus === "Trống" || bstatus === "trong" || bstatus === "Trong";
+                    let css = isAvailable ? "available" : "busy";
+                    html += `
+                        <div class="table-card ${css}" data-id="${bid}" data-name="${bname}" data-available="${isAvailable}">
+                            <div class="table-card-icon"><svg viewBox="0 0 24 24"><path d="M3 10h18v2H3v-2zm2 4h14v6H5v-6zM7 4h10v4H7V4z"/></svg></div>
+                            <div class="table-card-name">${bname}</div>
+                            <div class="table-card-capacity">${bseat} người</div>
+                        </div>`;
+                });
+                document.getElementById("banPhongGrid").innerHTML = html;
+            }
+
+            document.getElementById("banPhongGrid").addEventListener("click", function(e) {
+                let card = e.target.closest(".table-card");
+                if (!card) return;
+
+                if (card.dataset.available !== "true") {
+                    Swal.fire({ icon: "warning", title: "Bàn đã bận", confirmButtonColor: "#c59d5f" });
+                    return;
+                }
+
+                undoStack.push(getSnapshot());
+
+                document.querySelectorAll(".table-card").forEach(c => c.classList.remove("selected"));
+                card.classList.add("selected");
+
+                document.getElementById("selectedBanPhongID").value = card.dataset.id;
+                document.getElementById("selectedBanPhongName").value = card.dataset.name;
+
+                setTimeout(() => {
+                    let modal = bootstrap.Modal.getInstance(document.getElementById('banPhongModal'));
+                    modal.hide();
+                }, 200);
+            });
+
+
+            /* ============================================================
+               6) NÚT CHỨC NĂNG
+            ============================================================ */
+            document.getElementById("btnUndo").addEventListener("click", function () {
+                if (undoStack.length === 0) { Swal.fire("Không có bước hoàn tác!"); return; }
+                let prev = undoStack.pop();
+                applySnapshot(prev);
+            });
+
+            document.getElementById("btnRestore").addEventListener("click", function () {
+                Swal.fire({
+                    title: "Khôi phục mặc định?",
+                    text: "Mọi dữ liệu (Món, Ngày, Giờ, Bàn) sẽ về ban đầu!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Khôi phục"
+                }).then(res => {
+                    if (res.isConfirmed) {
+                        currentItems = JSON.parse(JSON.stringify(originalItems));
+
+                        document.getElementById("txtNgayDen").value = originalState.date;
+                        document.getElementById("ddlKhungGio").value = originalState.time;
+                        document.getElementById("selectedBanPhongID").value = originalState.tableId;
+                        document.getElementById("selectedBanPhongName").value = originalState.tableName;
+
+                        renderItems();
+                        undoStack = [];
+                    }
+                });
+            });
+
+            document.getElementById("btnSave").addEventListener("click", function (e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: "Lưu hóa đơn?",
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "Lưu"
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        let jsonData = currentItems.map(x => ({ MonAnID: x.MonAnID, TenMon: x.TenMon, DonGia: x.DonGia, SoLuong: x.SoLuong }));
+                        let input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = "ItemsJson";
+                        input.value = JSON.stringify(jsonData);
+                        document.getElementById("paymentForm").appendChild(input);
+                        document.getElementById("paymentForm").submit();
+                    }
+                });
+            });
+
+            renderItems();
+        </script>
+}

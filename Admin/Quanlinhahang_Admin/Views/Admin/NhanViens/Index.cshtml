@@ -1,0 +1,310 @@
+@model IEnumerable<Quanlinhahang.Data.Models.Nhanvien>
+
+@{
+    ViewData["Title"] = "Quản lý nhân viên";
+
+    string searchType = ViewBag.SearchType?.ToString() ?? "";
+    string keyword = (ViewBag.Keyword?.ToString() ?? "").Trim();
+    string emptyError = ViewBag.EmptyError?.ToString() ?? "";
+    bool isSearching = searchType == "id" || searchType == "phone";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="container mt-4">
+
+    <a href="/Home/Index" class="exit-square">✕</a>
+
+    <h2 class="text-center fw-bold mb-4">
+        @(isSearching ? "Tìm kiếm nhân viên" : "Quản lý nhân viên")
+    </h2>
+
+    <div class="search-box shadow-sm p-4 mb-4">
+        <form method="get" asp-action="Index">
+            <div class="search-line">
+                <select class="combo-blue" id="searchType" name="searchType">
+                    <option value="id" selected="@(searchType == "id")">Tìm theo ID</option>
+                    <option value="phone" selected="@(searchType == "phone")">Tìm theo SĐT</option>
+                </select>
+
+                <div class="search-wrapper">
+                    <input name="keyword" id="keywordInput" class="search-input @(string.IsNullOrEmpty(emptyError) ? "" : "is-invalid")"
+                           placeholder="@(searchType == "id" ? "Nhập ID nhân viên..." : "Nhập số điện thoại nhân viên...")"
+                           value="@keyword" />
+
+                    @if (!string.IsNullOrEmpty(emptyError))
+                    {
+                        <div class="invalid-feedback d-block">@emptyError</div>
+                    }
+
+                    <button type="submit" class="search-btn"><i class="fa fa-search"></i></button>
+                </div>
+
+                @if (isSearching)
+                {
+                    <button type="button" class="close-btn" onclick="window.location.href='/NhanViens'">✕</button>
+                }
+            </div>
+        </form>
+    </div>
+
+    <div class="text-center mb-4 @(isSearching ? "searching-placeholder" : "")">
+        @if (!isSearching)
+        {
+            <a asp-controller="NhanViens" asp-action="Create" class="btn btn-primary fw-semibold">
+                <i class="fa fa-user-plus"></i> Thêm nhân viên
+            </a>
+        }
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped text-center align-middle shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã</th>
+                    <th>Họ tên</th>
+                    <th>SĐT</th>
+                    <th>Chức vụ</th>
+                    <th>Ngày vào làm</th>
+                    <th>Trạng thái</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Mật khẩu</th>
+                    <th>Vai trò</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var nv in Model)
+                {
+                    // [SỬA]: Truy cập property theo tên đúng (Oracle Scaffold thường là PascalCase hoặc Lower)
+                    // Kiểm tra lại Model của bạn, ở đây tôi dùng chuẩn PascalCase
+                    var username = nv.Taikhoan?.Tendangnhap ?? "(Không có)";
+                    var password = nv.Taikhoan?.Matkhauhash ?? "(Không có)";
+                    var role = nv.Taikhoan?.Vaitro.ToString() ?? "(Không có)";
+
+                    string uid = "pw-" + nv.Nhanvienid;
+
+                    <tr class="nv-row" data-status="@nv.Trangthai" data-position="@nv.Chucvu" id="row-@nv.Nhanvienid">
+                        <td>@nv.Nhanvienid</td>
+                        <td>@nv.Hoten</td>
+                        <td>@nv.Sodienthoai</td>
+                        <td>@nv.Chucvu</td>
+                        <td>@(nv.Ngayvaolam?.ToString("dd/MM/yyyy"))</td>
+                        <td>
+                            @if (nv.Trangthai == "Đang làm")
+                            {
+                                <span class="badge bg-success">Đang làm</span>
+                            }
+                            else
+                            {
+
+                                <span class="badge bg-secondary">@nv.Trangthai</span>
+                            }
+                        </td>
+                        <td>@username</td>
+                        <td>
+                            <span id="@uid">******</span>
+                            <button class="btn btn-light btn-sm" onclick="togglePassword('@uid', '@password')">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </td>
+                        <td>@role</td>
+                        <td>
+                            <a class="btn btn-warning btn-sm" asp-controller="NhanViens" asp-action="Edit" asp-route-id="@nv.Nhanvienid">
+                                <i class="fa fa-pen"></i> Sửa
+                            </a>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDelete(@nv.Nhanvienid)">
+                                <i class="fa fa-trash"></i> Xóa
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!isSearching)
+    {
+        <div class="mt-4 p-3 shadow-sm bg-white rounded d-flex align-items-center" style="gap:20px;">
+            <select id="statSelect" class="form-select" style="max-width:260px;">
+                <option value="all">Tổng nhân viên</option>
+                <option value="danglam">Đang làm</option>
+                <option value="tamnghi">Tạm nghỉ</option>
+                <option value="nghiviec">Nghỉ việc</option>
+                <option value="quanly">Quản lý</option>
+                <option value="bep">Bếp</option>
+                <option value="phucvu">Phục vụ</option>
+                <option value="letan">Lễ tân</option>
+            </select>
+            <div id="statResult" class="fw-bold fs-5 text-primary"></div>
+        </div>
+    }
+</div>
+
+<script>
+    function togglePassword(id, realPw) {
+        let span = document.getElementById(id);
+        span.innerText = (span.innerText === "******") ? realPw : "******";
+    }
+
+    function confirmDelete(id) {
+        Swal.fire({
+            title: 'Xoá nhân viên?',
+            text: 'Bạn có chắc chắn muốn xóa nhân viên này?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#d33'
+        }).then(res => {
+            if (res.isConfirmed) {
+                // [SỬA]: Đường dẫn API (Bỏ /Admin)
+                fetch(`/NhanViens/DeleteConfirmed/${id}`, { method: 'POST' })
+                    .then(r => {
+                        if (r.ok) {
+                            document.getElementById(`row-${id}`).remove();
+                            Swal.fire({ icon: 'success', title: 'Đã xoá thành công!', showConfirmButton: false, timer: 1500 });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Lỗi xóa nhân viên!', text: 'Có thể do ràng buộc dữ liệu.' });
+                        }
+                    });
+            }
+        });
+    }
+
+    // Logic thống kê giữ nguyên (JS chạy ok)
+    function normalize(s) { return s ? s.normalize("NFC").trim() : ""; }
+
+    document.getElementById("statSelect")?.addEventListener("change", function () {
+        let val = this.value;
+        let rows = document.querySelectorAll(".nv-row");
+        let count = 0;
+        rows.forEach(row => {
+            let st = normalize(row.dataset.status);
+            let pos = normalize(row.dataset.position);
+            if (val === "all") count++;
+            else if (val === "danglam" && st === "Đang làm") count++;
+            else if (val === "tamnghi" && st === "Tạm nghỉ") count++;
+            else if (val === "nghiviec" && st === "Nghỉ việc") count++;
+            else if (val === "quanly" && pos === "Quản lý") count++;
+            else if (val === "bep" && pos === "Bếp") count++;
+            else if (val === "phucvu" && pos === "Phục vụ") count++;
+            else if (val === "letan" && pos === "Lễ tân") count++;
+        });
+        document.getElementById("statResult").innerText = "Số lượng: " + count;
+    });
+
+    window.addEventListener("load", function () {
+        const select = document.getElementById("statSelect");
+        if (select) { select.value = "all"; select.dispatchEvent(new Event("change")); }
+    });
+</script>
+
+@if (TempData["msg"] != null)
+{
+    <script>
+        Swal.fire({ icon: "success", title: "@TempData["msg"]", showConfirmButton: false, timer: 1800 });
+    </script>
+}
+
+<style>
+    /* CSS giữ nguyên của bạn, rất tốt */
+    body {
+        background: #f4f7ff;
+    }
+
+    .exit-square {
+        position: fixed;
+        top: 20px;
+        right: 25px;
+        width: 42px;
+        height: 42px;
+        background: #dc3545;
+        color: white !important;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        text-decoration: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+        z-index: 9999;
+        transition: 0.15s;
+    }
+
+        .exit-square:hover {
+            background: #b02a37;
+            transform: scale(1.05);
+        }
+
+    .search-box {
+        border-radius: 18px;
+        background: white;
+        border: 1px solid #e0e6f2;
+    }
+
+    .search-line {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .combo-blue {
+        background: #0d6efd;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        min-width: 180px;
+    }
+
+    .search-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .search-input {
+        width: 100%;
+        height: 48px;
+        border-radius: 12px;
+        border: 1px solid #cbd6f0;
+        background: #f0f6ff;
+        padding-left: 16px;
+        padding-right: 60px;
+    }
+
+    .search-btn {
+        position: absolute;
+        right: 8px;
+        top: 7px;
+        height: 34px;
+        width: 38px;
+        border-radius: 8px;
+        background: #0d6efd;
+        color: white;
+        cursor: pointer;
+        border: none;
+    }
+
+    .close-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: #dc3545;
+        color: white;
+        font-size: 22px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .searching-placeholder {
+        height: 0;
+        overflow: hidden;
+    }
+</style>

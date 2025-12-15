@@ -1,0 +1,92 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quanlinhahang_Admin", "Admin\Quanlinhahang_Admin\Quanlinhahang_Admin.csproj", "{D86838EE-F8D8-67FF-6634-58DCD741B28B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quanlinhahang_Customer", "Khachhang\Quanlinhahang_Customer\Quanlinhahang_Customer\Quanlinhahang_Customer.csproj", "{B239A767-F8E2-EE54-090E-DF4CB43D07B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quanlinhahang_Staff", "Nhanvien\Quanlinhahang_Staff\Quanlinhahang_Staff\Quanlinhahang_Staff.csproj", "{B3B3720D-38AC-EE4F-37C5-0D1B7FE1C0BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quanlinhahang.Data", "Quanlinhahang.Data\Quanlinhahang.Data.csproj", "{F14556FD-D5A9-4581-D96A-D3521928D7E7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedImages", "SharedImages", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Monan", "Monan", "{CDC60EB4-8C47-4D89-9DDC-E8868DA312ED}"
+	ProjectSection(SolutionItems) = preProject
+		SharedImages\Monan\Banh-mi-bo-toi.jpg = SharedImages\Monan\Banh-mi-bo-toi.jpg
+		SharedImages\Monan\Banh-phomai-nuong.jpg = SharedImages\Monan\Banh-phomai-nuong.jpg
+		SharedImages\Monan\Banh-tart-chanh.jpg = SharedImages\Monan\Banh-tart-chanh.jpg
+		SharedImages\Monan\Beefsteak-sot-tieu-den.jpg = SharedImages\Monan\Beefsteak-sot-tieu-den.jpg
+		SharedImages\Monan\Bo-Wellington.jpg = SharedImages\Monan\Bo-Wellington.jpg
+		SharedImages\Monan\Bruschetta-ca-chua-dau-o-liu.jpg = SharedImages\Monan\Bruschetta-ca-chua-dau-o-liu.jpg
+		SharedImages\Monan\Ca-hoi-ap-chao-sot-bo-chanh.jpg = SharedImages\Monan\Ca-hoi-ap-chao-sot-bo-chanh.jpg
+		SharedImages\Monan\Ca-phe-da.jpg = SharedImages\Monan\Ca-phe-da.jpg
+		SharedImages\Monan\Ca-phe-Espresso.jpg = SharedImages\Monan\Ca-phe-Espresso.jpg
+		SharedImages\Monan\Champagne (chai).jpg = SharedImages\Monan\Champagne (chai).jpg
+		SharedImages\Monan\default.jpg = SharedImages\Monan\default.jpg
+		SharedImages\Monan\Ga-nuong-thao-moc-kieu-Phap.jpg = SharedImages\Monan\Ga-nuong-thao-moc-kieu-Phap.jpg
+		SharedImages\Monan\Khoai-tay-nghien-bo-sua.jpg = SharedImages\Monan\Khoai-tay-nghien-bo-sua.jpg
+		SharedImages\Monan\Mi-y-sot-kem-nam.jpg = SharedImages\Monan\Mi-y-sot-kem-nam.jpg
+		SharedImages\Monan\Nui-pho-mai-dut-lo.jpg = SharedImages\Monan\Nui-pho-mai-dut-lo.jpg
+		SharedImages\Monan\Nuoc-cam-ep.jpg = SharedImages\Monan\Nuoc-cam-ep.jpg
+		SharedImages\Monan\Pho-mai-que-chien-xu.jpg = SharedImages\Monan\Pho-mai-que-chien-xu.jpg
+		SharedImages\Monan\Risotto-nam.jpg = SharedImages\Monan\Risotto-nam.jpg
+		SharedImages\Monan\Ruou-vang-do-Phap.jpg = SharedImages\Monan\Ruou-vang-do-Phap.jpg
+		SharedImages\Monan\Salad-Caesar-voi-ga-nuong.jpg = SharedImages\Monan\Salad-Caesar-voi-ga-nuong.jpg
+		SharedImages\Monan\Suon-cuu-nuong-rosemary.jpg = SharedImages\Monan\Suon-cuu-nuong-rosemary.jpg
+		SharedImages\Monan\Sup-bi-do-kem-tuoi.jpg = SharedImages\Monan\Sup-bi-do-kem-tuoi.jpg
+		SharedImages\Monan\Sup-hai-san-kieu-y.jpg = SharedImages\Monan\Sup-hai-san-kieu-y.jpg
+		SharedImages\Monan\Tiramisu.jpg = SharedImages\Monan\Tiramisu.jpg
+		SharedImages\Monan\Uc-vit-sot-cam.jpg = SharedImages\Monan\Uc-vit-sot-cam.jpg
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Setmonan", "Setmonan", "{89D043CA-90DA-4259-8A3E-2657199FFA3F}"
+	ProjectSection(SolutionItems) = preProject
+		SharedImages\Setmonan\set1.jpg = SharedImages\Setmonan\set1.jpg
+		SharedImages\Setmonan\set10.jpg = SharedImages\Setmonan\set10.jpg
+		SharedImages\Setmonan\set2.jpg = SharedImages\Setmonan\set2.jpg
+		SharedImages\Setmonan\set3.jpg = SharedImages\Setmonan\set3.jpg
+		SharedImages\Setmonan\set4.jpg = SharedImages\Setmonan\set4.jpg
+		SharedImages\Setmonan\set5.jpg = SharedImages\Setmonan\set5.jpg
+		SharedImages\Setmonan\set6.jpg = SharedImages\Setmonan\set6.jpg
+		SharedImages\Setmonan\set7.jpg = SharedImages\Setmonan\set7.jpg
+		SharedImages\Setmonan\set8.jpg = SharedImages\Setmonan\set8.jpg
+		SharedImages\Setmonan\set9.jpg = SharedImages\Setmonan\set9.jpg
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D86838EE-F8D8-67FF-6634-58DCD741B28B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D86838EE-F8D8-67FF-6634-58DCD741B28B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D86838EE-F8D8-67FF-6634-58DCD741B28B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D86838EE-F8D8-67FF-6634-58DCD741B28B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B239A767-F8E2-EE54-090E-DF4CB43D07B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B239A767-F8E2-EE54-090E-DF4CB43D07B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B239A767-F8E2-EE54-090E-DF4CB43D07B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B239A767-F8E2-EE54-090E-DF4CB43D07B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3B3720D-38AC-EE4F-37C5-0D1B7FE1C0BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3B3720D-38AC-EE4F-37C5-0D1B7FE1C0BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3B3720D-38AC-EE4F-37C5-0D1B7FE1C0BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3B3720D-38AC-EE4F-37C5-0D1B7FE1C0BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F14556FD-D5A9-4581-D96A-D3521928D7E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F14556FD-D5A9-4581-D96A-D3521928D7E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F14556FD-D5A9-4581-D96A-D3521928D7E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F14556FD-D5A9-4581-D96A-D3521928D7E7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CDC60EB4-8C47-4D89-9DDC-E8868DA312ED} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{89D043CA-90DA-4259-8A3E-2657199FFA3F} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {24D31463-A824-41A4-B9F9-72025B7C386B}
+	EndGlobalSection
+EndGlobal

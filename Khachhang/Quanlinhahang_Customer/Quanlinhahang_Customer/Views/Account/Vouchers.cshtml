@@ -1,0 +1,60 @@
+﻿@{
+    ViewData["Title"] = "Mã giảm giá & Ưu đãi";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/history.css" asp-append-version="true" />
+    <style>
+        .voucher-header {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #e8e8e8;
+        }
+        .voucher-card {
+            min-width: 500px;
+            background: #2a2a2a;
+            border-left: 5px solid #c59d5f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .voucher-code {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #c59d5f;
+            background: #444;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+        .voucher-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+    </style>
+}
+
+<div class="register-container">
+    <div id="voucherPage">
+
+        <h2 class="history-title">Ưu đãi & Mã giảm giá của tôi</h2>
+
+        <div class="history-content">
+            <div class="voucher-header">
+                <p>Hạng thành viên: <strong id="memberRank">...</strong></p>
+                <p>Điểm tích lũy: <strong id="memberPoints">...</strong> điểm</p>
+            </div>
+
+            <div id="voucher-list">
+                <div class="loading-spinner">Đang tải Voucher...</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/vouchers.js" asp-append-version="true"></script>
+}

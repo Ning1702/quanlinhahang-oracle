@@ -1,0 +1,99 @@
+@model Quanlinhahang.Data.Models.Nhanvien
+
+@{
+    ViewData["Title"] = "Thêm nhân viên";
+}
+
+<div class="form-container">
+    <h2 class="text-center mb-4">Thêm nhân viên</h2>
+
+    <form id="createForm" asp-action="Create" method="post">
+        <div class="section-box mb-4">
+            <h4>Mã nhân viên (Dự kiến)</h4>
+            <input class="form-control" value="@ViewBag.NextID" disabled />
+        </div>
+
+        <div class="section-box mb-4">
+            <h4>Thông tin nhân viên</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>Họ tên</label>
+                    <input asp-for="Hoten" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label>Số điện thoại</label>
+                    <input asp-for="Sodienthoai" class="form-control" required />
+                    <span class="text-danger">@ViewBag.PhoneError</span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label>Chức vụ</label>
+                    <select asp-for="Chucvu" class="form-control">
+                        <option>Quản lý</option>
+                        <option>Phục vụ</option>
+                        <option>Bếp</option>
+                        <option>Lễ tân</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label>Ngày vào làm</label>
+                    <input asp-for="Ngayvaolam" type="date" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label>Trạng thái</label>
+                    <select asp-for="Trangthai" class="form-control">
+                        <option>Đang làm</option>
+                        <option>Tạm nghỉ</option>
+                        <option>Nghỉ việc</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box mb-4">
+            <h4>Thông tin tài khoản</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>Tên đăng nhập</label>
+                    <input name="TenDangNhap" class="form-control" value="@ViewBag.TenDangNhap" required />
+                    <span class="text-danger">@ViewBag.UsernameError</span>
+                </div>
+                <div class="col-md-6">
+                    <label>Mật khẩu</label>
+                    <input name="MatKhau" type="text" class="form-control" value="@ViewBag.MatKhau" required />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label>Vai trò</label>
+                <select name="VaiTro" class="form-control">
+                    <option value="Admin">Admin</option>
+                    <option value="Staff" selected>Nhân viên</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a asp-action="Index" class="btn btn-secondary me-3">Hủy</a>
+            <button type="submit" class="btn btn-primary">Lưu</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById("createForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        Swal.fire({
+            title: "Xác nhận thêm nhân viên?", icon: "question", showCancelButton: true,
+            confirmButtonText: "Đồng ý", cancelButtonText: "Hủy"
+        }).then((result) => { if (result.isConfirmed) e.target.submit(); });
+    });
+</script>
+<style>    .section-box {
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 12px;
+        background: #fff;
+    }</style>

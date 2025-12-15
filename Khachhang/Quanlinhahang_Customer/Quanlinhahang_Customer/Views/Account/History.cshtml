@@ -1,0 +1,34 @@
+﻿@{
+    ViewData["Title"] = "Lịch sử đặt bàn";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/history.css" asp-append-version="true" />
+}
+
+<div class="register-container">
+    <div id="historyPage">
+
+        <h2 class="history-title">Lịch sử của tôi</h2>
+
+        <nav class="history-tabs">
+            <button class="history-tab-item active" data-status="tất cả">Tất cả</button>
+            <button class="history-tab-item" data-status="chưa xác nhận">Chưa xác nhận</button>
+            <button class="history-tab-item" data-status="đã xác nhận">Đã xác nhận</button>
+            <button class="history-tab-item" data-status="đang phục vụ">Đang phục vụ</button>
+            <button class="history-tab-item" data-status="đã thanh toán">Đã thanh toán</button>
+            <button class="history-tab-item" data-status="đã hủy">Đã hủy</button>
+        </nav>
+
+        <div class="history-content">
+            <div id="history-results">
+                <div class="loading-spinner">Đang tải...</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/history.js" asp-append-version="true"></script>
+}

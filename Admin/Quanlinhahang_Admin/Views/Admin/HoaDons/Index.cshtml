@@ -1,0 +1,257 @@
+@using Quanlinhahang.Data.Models
+@model IEnumerable<Hoadon>
+
+@{
+    ViewData["Title"] = "Quản lý Hóa đơn";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<style>
+    /* 🌆 Nền */
+    body {
+        background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.6)), url('/images/bg-login.jpg') center/cover no-repeat;
+        font-family: 'Segoe UI', sans-serif;
+        color: #fff;
+        min-height: 100vh;
+    }
+
+    .invoice-container {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(18px);
+        border-radius: 18px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+        padding: 35px 45px;
+        margin: 40px auto;
+        width: 95%;
+        max-width: 1300px;
+        animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    h4 {
+        text-align: center;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 25px;
+    }
+
+    /* 🔹 Nút quay lại */
+    .back-btn {
+        background: #1b8f58;
+        color: white;
+        font-weight: 600;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin-bottom: 20px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+        .back-btn:hover {
+            background: #2ba36a;
+            transform: translateY(-2px);
+        }
+
+    /* 🔸 Bộ lọc */
+    form .form-select, .btn-secondary {
+        border-radius: 8px;
+        border: none;
+        padding: 7px 12px;
+        font-size: 15px;
+    }
+
+    .btn-secondary {
+        background-color: #555;
+        color: white;
+        font-weight: 600;
+        transition: 0.3s ease;
+    }
+
+        .btn-secondary:hover {
+            background-color: #777;
+        }
+
+    /* 📊 Bảng hóa đơn */
+    table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    thead {
+        background: linear-gradient(145deg, #e3a35e, #c98542);
+        color: white;
+    }
+
+    th, td {
+        padding: 14px 12px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    tbody tr {
+        transition: all 0.25s ease;
+        color: #fff;
+    }
+
+        tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.01);
+        }
+
+    /* 🎨 Nút trạng thái */
+    .btn-info {
+        background-color: #05b2f8;
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .btn-success {
+        background-color: #1b8f58;
+        border: none;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        border: none;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    td form {
+        display: inline;
+    }
+</style>
+
+<div class="invoice-container">
+    <!-- 🔹 Nút quay lại -->
+    <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="back-btn">
+        <i class="fa fa-arrow-left"></i> Quay lại trang quản trị
+    </a>
+
+    <h4><i class="fa-solid fa-file-invoice-dollar"></i> Danh sách hóa đơn</h4>
+
+    <!-- 🔸 Bộ lọc -->
+    <form method="get" class="mb-3">
+        <div class="row g-2">
+            <div class="col-auto">
+                <select name="status" class="form-select">
+                    <option value="">-- Tất cả --</option>
+                    <option value="Đã thanh toán" selected="@(ViewBag.Status as string == "Đã thanh toán")">Đã thanh toán</option>
+                    <option value="Chưa thanh toán" selected="@(ViewBag.Status as string == "Chưa thanh toán")">Chưa thanh toán</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-secondary">Lọc</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- 📋 Bảng hóa đơn -->
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Khách hàng</th>
+                <th>Ngày lập</th>
+                <th>Tổng tiền</th>
+                <th>VAT</th>
+                <th>Loại DV</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>#@item.Hoadonid</td>
+                            <td>
+                                @if (item.Datban?.Khachhang != null)
+                                {
+                                    <span>@item.Datban.Khachhang.Hoten</span>
+                                    <br/>
+                                    <small class="text-muted">@item.Datban.Khachhang.Sodienthoai</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Khách vãng lai</span>
+                                }
+                            </td>
+                            <td>@item.Ngaylap.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="fw-bold text-danger">@item.Tongtien.ToString("#,##0") đ</td>
+                            <td>@(item.Vat * 100)%</td>
+                            
+                            <td>
+                                @* Hiển thị tên trạng thái từ bảng liên kết *@
+                                @if (item.Trangthaiid == 4) 
+                                {
+                                    <span class="badge bg-success">Đã thanh toán</span>
+                                }
+                                else 
+                                {
+                                    <span class="badge bg-warning text-dark">@item.Trangthai?.Tentrangthai</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@item.Hoadonid" class="btn btn-sm btn-primary" title="Sửa VAT"><i class="fas fa-edit"></i></a>
+                                
+                                @if (item.Trangthaiid != 4)
+                                {
+                                    <form asp-action="MarkPaid" asp-route-id="@item.Hoadonid" method="post" style="display:inline">
+                                        <button class="btn btn-sm btn-success" title="Xác nhận thanh toán">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="MarkUnpaid" asp-route-id="@item.Hoadonid" method="post" style="display:inline">
+                                        <button class="btn btn-sm btn-secondary" title="Hủy thanh toán">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+        </tbody>
+    </table>
+</div>
