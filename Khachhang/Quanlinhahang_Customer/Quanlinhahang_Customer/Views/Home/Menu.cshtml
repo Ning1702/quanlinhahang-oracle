@@ -1,9 +1,28 @@
-﻿@using Quanlinhahang_Customer.Models.ViewModels
+﻿@using Microsoft.AspNetCore.Mvc.Rendering
+@using Quanlinhahang_Customer.Models.ViewModels
 @model MenuViewModel
 
 @{
     ViewBag.Title = "Thực đơn";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Base URL bucket public trên Supabase Storage
+    // Đổi project-ref nếu bạn dùng project khác
+    string baseImageUrl = "https://wmvatmemmvayfojzhshv.supabase.co/storage/v1/object/public/SharedImages";
+
+    string GetImageFolder(string? loaiMon)
+    {
+        return loaiMon == "Combo" ? "Setmonan" : "Monan";
+    }
+
+    string BuildImageUrl(string? loaiMon, string? imageName)
+    {
+        var folder = GetImageFolder(loaiMon);
+        var fileName = string.IsNullOrWhiteSpace(imageName) ? "default.jpg" : imageName;
+        return $"{baseImageUrl}/{folder}/{fileName}";
+    }
+
+    string fallbackImage = $"{baseImageUrl}/Monan/default.jpg";
 }
 
 <header class="site-header">
@@ -14,11 +33,16 @@
 
     <div class="header-center">
         <form method="get" asp-action="Menu" asp-controller="Home" class="header-center" onsubmit="return false;">
-            <input type="text" id="search-box" name="search" value="@Model.Search" placeholder="🔍Tìm kiếm món ăn, combo..." />
+            <input type="text"
+                   id="search-box"
+                   name="search"
+                   value="@Model.Search"
+                   placeholder="🔍Tìm kiếm món ăn, combo..." />
+
             @{
-                // [ĐÃ SỬA]: Danhmucid -> DanhMucId, Tendanhmuc -> TenDanhMuc
                 var items = new SelectList(Model.DanhMucList, "DanhMucId", "TenDanhMuc", Model.DanhMucId);
             }
+
             @Html.DropDownListFor(m => m.DanhMucId, items, "Tất cả danh mục", new { id = "filter-cat" })
         </form>
     </div>
@@ -39,19 +63,15 @@
         <div class="menu-grid">
             @foreach (var mon in Model.MonAnList.Where(m => m.LoaiMon == "Combo"))
             {
-                // [SỬA]: Folder tên là Setmonan (khớp với thư mục thật trong SharedImages)
-                string folder = "Setmonan";
-                string imageName = mon.HinhAnhUrl ?? "default.jpg"; // Hinhanhurl -> HinhAnhUrl
+                var imagePath = BuildImageUrl(mon.LoaiMon, mon.HinhAnhUrl);
 
-                // [SỬA QUAN TRỌNG]: Đổi /images/ thành /shared/
-                string imagePath = $"/shared/{folder}/{imageName}";
-
-                <article class="menu-card" data-cat="@mon.DanhMucId" data-search="@($"{mon.TenMon} {mon.MoTa}")">
+                <article class="menu-card"
+                         data-cat="@mon.DanhMucId"
+                         data-search="@($"{mon.TenMon} {mon.MoTa}")">
                     <div class="card-media">
                         <img src="@imagePath"
                              alt="@mon.TenMon"
-                             @* [SỬA]: Đường dẫn ảnh lỗi cũng phải trỏ về /shared *@
-                             onerror="this.src='/shared/Monan/default.jpg'"
+                             onerror="this.onerror=null;this.src='@fallbackImage';"
                              class="img-fluid" />
                     </div>
                     <div class="card-body">
@@ -60,7 +80,10 @@
                         <div class="price-row">
                             <span class="new-price">@mon.DonGia?.ToString("n0") đ</span>
                         </div>
-                        <button class="order-btn" data-id="@mon.MonAnId" data-name="@mon.TenMon" data-price="@mon.DonGia">
+                        <button class="order-btn"
+                                data-id="@mon.MonAnId"
+                                data-name="@mon.TenMon"
+                                data-price="@mon.DonGia">
                             Thêm vào giỏ
                         </button>
                     </div>
@@ -76,18 +99,15 @@
         <div class="menu-grid">
             @foreach (var mon in Model.MonAnList.Where(m => m.LoaiMon != "Combo"))
             {
-                string folder = "Monan";
-                string imageName = mon.HinhAnhUrl ?? "default.jpg";
+                var imagePath = BuildImageUrl(mon.LoaiMon, mon.HinhAnhUrl);
 
-                // [SỬA QUAN TRỌNG]: Đổi /images/ thành /shared/
-                string imagePath = $"/shared/{folder}/{imageName}";
-
-                <article class="menu-card" data-cat="@mon.DanhMucId" data-search="@($"{mon.TenMon} {mon.MoTa}")">
+                <article class="menu-card"
+                         data-cat="@mon.DanhMucId"
+                         data-search="@($"{mon.TenMon} {mon.MoTa}")">
                     <div class="card-media">
                         <img src="@imagePath"
                              alt="@mon.TenMon"
-                             @* [SỬA]: Đường dẫn ảnh lỗi *@
-                             onerror="this.src='/shared/Monan/default.jpg'"
+                             onerror="this.onerror=null;this.src='@fallbackImage';"
                              class="img-fluid" />
                     </div>
                     <div class="card-body">
@@ -96,7 +116,10 @@
                         <div class="price-row">
                             <span class="new-price">@mon.DonGia?.ToString("n0") ₫</span>
                         </div>
-                        <button class="order-btn" data-id="@mon.MonAnId" data-name="@mon.TenMon" data-price="@mon.DonGia">
+                        <button class="order-btn"
+                                data-id="@mon.MonAnId"
+                                data-name="@mon.TenMon"
+                                data-price="@mon.DonGia">
                             Thêm vào giỏ
                         </button>
                     </div>
