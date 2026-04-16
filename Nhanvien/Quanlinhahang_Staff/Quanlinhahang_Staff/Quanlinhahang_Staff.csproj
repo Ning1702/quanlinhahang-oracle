@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Khachhang\Quanlinhahang_Customer\Quanlinhahang_Customer\Quanlinhahang_Customer.csproj" />
     <ProjectReference Include="..\..\..\Quanlinhahang.Data\Quanlinhahang.Data.csproj" />
   </ItemGroup>
 
