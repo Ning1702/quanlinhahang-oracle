@@ -4,16 +4,12 @@ using Quanlinhahang.Data.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ====================== 1. CẤU HÌNH DỊCH VỤ ======================
-
-// Lấy connection string từ appsettings.json hoặc biến môi trường Render:
-// ConnectionStrings__DefaultConnection
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+// ====================== 1. CẤU HÌNH DỊCH VỤ ======================
 builder.Services.AddDbContext<QuanLyNhaHangContext>(options =>
     options.UseNpgsql(connectionString));
 
-// Session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -23,13 +19,12 @@ builder.Services.AddSession(options =>
     options.Cookie.Name = ".QLNH.Staff.Session";
 });
 
-// Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.LoginPath = "/Auth/Login";
+        options.LogoutPath = "/Auth/Logout";
+        options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
         options.SlidingExpiration = true;
     });
@@ -51,19 +46,16 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Thứ tự chuẩn
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<Quanlinhahang_Staff.Hubs.NotificationHub>("/notificationHub");
 
-// Route mặc định
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
-// Port cho Render
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 app.Urls.Add($"http://0.0.0.0:{port}");
 

@@ -12,7 +12,7 @@ namespace Quanlinhahang_Staff.Controllers
 
         protected IActionResult RequireLogin()
         {
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Auth");
         }
     }
 }

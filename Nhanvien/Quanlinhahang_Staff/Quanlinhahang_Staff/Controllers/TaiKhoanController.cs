@@ -28,7 +28,7 @@ namespace Quanlinhahang_Staff.Controllers
             int? userId = HttpContext.Session.GetInt32("UserId");
 
             if (userId == null)
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction("Login", "Auth");
 
             var info = await (
                 from nv in _context.NhanViens
@@ -115,7 +115,7 @@ namespace Quanlinhahang_Staff.Controllers
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
 
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Auth");
         }
 
         [HttpGet]
