@@ -3,39 +3,27 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Hoadon
+public partial class HoaDon
 {
-    public int Hoadonid { get; set; }
+    public int HoaDonId { get; set; }
 
-    public int Datbanid { get; set; }
+    public int? DatBanId { get; set; }
 
-    public int? Banphongid { get; set; }
+    public DateTime? NgayLap { get; set; }
 
-    public int? Taikhoanid { get; set; }
+    public decimal? TongTien { get; set; }
 
-    public DateTime Ngaylap { get; set; }
+    public decimal? Vatpercent { get; set; }
 
-    public long Tongtien { get; set; }
+    public int? TrangThaiId { get; set; }
 
-    public long Giamgia { get; set; }
+    public int? TaiKhoanId { get; set; }
 
-    public int Diemcong { get; set; }
+    public virtual ICollection<ChiTietHoaDon> ChiTietHoaDons { get; set; } = new List<ChiTietHoaDon>();
 
-    public int Diemsudung { get; set; }
+    public virtual DatBan? DatBan { get; set; }
 
-    public string? Hinhthucthanhtoan { get; set; }
+    public virtual TaiKhoan? TaiKhoan { get; set; }
 
-    public int Trangthaiid { get; set; }
-
-    public long? Vat { get; set; }
-
-    public virtual Banphong? Banphong { get; set; }
-
-    public virtual ICollection<Chitiethoadon> Chitiethoadons { get; set; } = new List<Chitiethoadon>();
-
-    public virtual Datban Datban { get; set; } = null!;
-
-    public virtual Taikhoan? Taikhoan { get; set; }
-
-    public virtual Trangthaihoadon Trangthai { get; set; } = null!;
+    public virtual TrangThaiHoaDon? TrangThai { get; set; }
 }

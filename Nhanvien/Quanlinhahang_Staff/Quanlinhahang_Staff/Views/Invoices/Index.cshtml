@@ -8,7 +8,13 @@
     string? highlightId = Context.Request.Query["highlight"];
 }
 
-<h2 class="mt-3">Danh sách hóa đơn</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 style="color: #333; margin: 0;">Danh sách hóa đơn</h2>
+
+    <a asp-action="CreateWalkIn" class="btn btn-primary fw-bold shadow-sm px-4">
+        <i class="fas fa-plus-circle me-2"></i> Tạo đơn mới
+    </a>
+</div>
 
 @if (TempData["msg"] != null)
 {
@@ -17,28 +23,22 @@
 
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item">
-        <a class="nav-link @(currentStatus == 0 ? "active" : "")"
-           asp-action="Index" asp-route-status="0">Tất cả</a>
+        <a class="nav-link @(currentStatus == 0 ? "active" : "")" asp-action="Index" asp-route-status="0">Tất cả</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentStatus == 1 ? "active" : "")"
-           asp-action="Index" asp-route-status="1">Chờ xác nhận</a>
+        <a class="nav-link @(currentStatus == 1 ? "active" : "")" asp-action="Index" asp-route-status="1">Chờ xác nhận</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentStatus == 2 ? "active" : "")"
-           asp-action="Index" asp-route-status="2">Đã xác nhận</a>
+        <a class="nav-link @(currentStatus == 2 ? "active" : "")" asp-action="Index" asp-route-status="2">Đã xác nhận</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentStatus == 3 ? "active" : "")"
-           asp-action="Index" asp-route-status="3">Đang phục vụ</a>
+        <a class="nav-link @(currentStatus == 3 ? "active" : "")" asp-action="Index" asp-route-status="3">Đang phục vụ</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentStatus == 4 ? "active" : "")"
-           asp-action="Index" asp-route-status="4">Đã thanh toán</a>
+        <a class="nav-link @(currentStatus == 4 ? "active" : "")" asp-action="Index" asp-route-status="4">Đã thanh toán</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link @(currentStatus == 5 ? "active" : "")"
-           asp-action="Index" asp-route-status="5">Đã hủy</a>
+        <a class="nav-link @(currentStatus == 5 ? "active" : "")" asp-action="Index" asp-route-status="5">Đã hủy</a>
     </li>
 </ul>
 
@@ -106,106 +106,81 @@
                     {
                         case 1:
                             <span class="badge bg-warning text-dark">Chờ xác nhận</span>
-                            ;
                             break;
                         case 2:
                             <span class="badge bg-primary">Đã xác nhận</span>
-                            ;
                             break;
                         case 3:
                             <span class="badge bg-info">Đang phục vụ</span>
-                            ;
                             break;
                         case 4:
                             <span class="badge bg-success">Đã thanh toán</span>
-                            ;
                             break;
                         case 5:
                             <span class="badge bg-secondary">Đã hủy</span>
-                            ;
                             break;
                     }
                 </td>
 
                 <td class="text-center">
-                    @if (currentStatus == 0)
+                    @if (currentStatus == 0) // Tab Tất cả
                     {
-                        <a class="btn btn-sm btn-primary"
-                           href="@Url.Action("GoManage", "Invoices", new { id = x.HoaDonID })">
-                            Quản lý
-                        </a>
+                        @if (x.TrangThaiID == 1) // Nếu là đơn mới -> Hiện nút Quản lý
+                        {
+                            // [SỬA LỖI 404]: Đổi GoManage thành Edit
+                            <a asp-action="Edit" asp-route-id="@x.HoaDonID" class="btn btn-sm btn-primary">
+                                Quản lý
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="Details" asp-route-id="@x.HoaDonID" class="btn btn-sm btn-info">
+                                Xem
+                            </a>
+                        }
                     }
                     else
                     {
-                        @if (x.TrangThaiID == 4)
+                        @if (x.TrangThaiID == 4) // Đã thanh toán
                         {
-                            <a asp-action="Details"
-                               asp-route-id="@x.HoaDonID"
-                               asp-route-status="@currentStatus"
-                               class="btn btn-sm btn-info me-1">
-                                Xem
-                            </a>
-
-                            <a asp-action="Print"
-                               asp-route-id="@x.HoaDonID"
-                               asp-route-status="@currentStatus"
-                               class="btn btn-sm btn-secondary">
-                                In
-                            </a>
+                            <a asp-action="Details" asp-route-id="@x.HoaDonID" asp-route-status="@currentStatus" class="btn btn-sm btn-info me-1">Xem</a>
+                            <a asp-action="Print" asp-route-id="@x.HoaDonID" asp-route-status="@currentStatus" class="btn btn-sm btn-secondary">In</a>
                         }
-                        else if (x.TrangThaiID == 2)
+                        else if (x.TrangThaiID == 2) // Đã xác nhận -> Chờ phục vụ
                         {
                             <form class="d-inline confirm-action" method="post" asp-action="StartServing" asp-route-id="@x.HoaDonID">
                                 @Html.AntiForgeryToken()
                                 <button class="btn btn-sm btn-primary me-1">Phục vụ</button>
                             </form>
 
-                            <a asp-action="Edit"
-                               asp-route-id="@x.HoaDonID"
-                               asp-route-status="@currentStatus"
-                               class="btn btn-sm btn-warning me-1">
-                                Chi tiết
-                            </a>
+                            <a asp-action="Edit" asp-route-id="@x.HoaDonID" asp-route-status="@currentStatus" class="btn btn-sm btn-warning me-1">Chi tiết</a>
 
                             <form class="d-inline confirm-action" method="post" asp-action="HuyHoaDon" asp-route-id="@x.HoaDonID">
                                 @Html.AntiForgeryToken()
                                 <button class="btn btn-sm btn-danger">Hủy</button>
                             </form>
                         }
-                        else if (x.TrangThaiID == 3)
+                        else if (x.TrangThaiID == 3) // Đang phục vụ -> Chờ thanh toán
                         {
                             <form class="d-inline confirm-action" method="post" asp-action="ThanhToan" asp-route-id="@x.HoaDonID">
                                 @Html.AntiForgeryToken()
                                 <button class="btn btn-sm btn-success me-1">Thanh toán</button>
                             </form>
 
-                            <a asp-action="Edit"
-                               asp-route-id="@x.HoaDonID"
-                               asp-route-status="@currentStatus"
-                               class="btn btn-sm btn-warning me-1">
-                                Chi tiết
-                            </a>
+                            <a asp-action="Edit" asp-route-id="@x.HoaDonID" asp-route-status="@currentStatus" class="btn btn-sm btn-warning me-1">Chi tiết</a>
 
                             <form class="d-inline confirm-action" method="post" asp-action="HuyHoaDon" asp-route-id="@x.HoaDonID">
                                 @Html.AntiForgeryToken()
                                 <button class="btn btn-sm btn-danger">Hủy</button>
                             </form>
                         }
-                        else if (x.TrangThaiID == 5)
+                        else if (x.TrangThaiID == 5) // Đã hủy
                         {
-                            <a asp-action="Details"
-                               asp-route-id="@x.HoaDonID"
-                               asp-route-status="@currentStatus"
-                               class="btn btn-sm btn-info">Xem</a>
+                            <a asp-action="Details" asp-route-id="@x.HoaDonID" asp-route-status="@currentStatus" class="btn btn-sm btn-info">Xem</a>
                         }
-                        else
+                        else // Mặc định (Trạng thái 1 - Chờ xác nhận)
                         {
-                            <a asp-action="Edit"
-                               asp-route-id="@x.HoaDonID"
-                               asp-route-status="@currentStatus"
-                               class="btn btn-sm btn-warning me-1">
-                                Chi tiết
-                            </a>
+                            <a asp-action="Edit" asp-route-id="@x.HoaDonID" asp-route-status="@currentStatus" class="btn btn-sm btn-warning me-1">Chi tiết</a>
 
                             <form class="d-inline confirm-action" method="post" asp-action="ConfirmInvoice" asp-route-id="@x.HoaDonID">
                                 @Html.AntiForgeryToken()
@@ -236,8 +211,6 @@
 </style>
 
 @section Scripts {
-
-    <!-- Highlight Fade -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const row = document.querySelector(".highlight-row");
@@ -247,12 +220,9 @@
         });
     </script>
 
-    <!-- SWEETALERT XÁC NHẬN HÀNH ĐỘNG -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-
             document.querySelectorAll(".confirm-action").forEach(form => {
-
                 form.addEventListener("submit", function (e) {
                     e.preventDefault();
 
@@ -261,7 +231,7 @@
 
                     let title = "";
                     let text = "";
-                    let icon = "warning"; // mặc định
+                    let icon = "warning";
 
                     switch (action) {
                         case "Xác nhận":
@@ -269,25 +239,21 @@
                             text = "Bạn có chắc chắn muốn xác nhận hóa đơn này?";
                             icon = "question";
                             break;
-
                         case "Phục vụ":
                             title = "Phục vụ hóa đơn?";
                             text = "Bạn có chắc chắn muốn phục vụ hóa đơn này?";
                             icon = "question";
                             break;
-
                         case "Thanh toán":
                             title = "Thanh toán hóa đơn?";
                             text = "Bạn có chắc chắn muốn thanh toán hóa đơn này?";
                             icon = "question";
                             break;
-
                         case "Hủy":
                             title = "Hủy hóa đơn?";
-                            text = "Bạn sẽ không thể khôi phục lại hóa đơn đã hủy?";
-                            icon = "error";   // ❌ icon đỏ
+                            text = "Bạn sẽ không thể khôi phục lại hóa đơn đã hủy!";
+                            icon = "error";
                             break;
-
                         default:
                             title = "Xác nhận thao tác";
                             text = "Bạn có chắc chắn muốn thực hiện hành động này?";
@@ -309,13 +275,8 @@
                             form.submit();
                         }
                     });
-
                 });
-
             });
-
         });
     </script>
-
-
 }

@@ -3,13 +3,11 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Danhmucmon
+public partial class DanhMucMon
 {
-    public int Danhmucid { get; set; }
+    public int DanhMucId { get; set; }
 
-    public string Tendanhmuc { get; set; } = null!;
+    public string? TenDanhMuc { get; set; }
 
-    public string? Mota { get; set; }
-
-    public virtual ICollection<Monan> Monans { get; set; } = new List<Monan>();
+    public virtual ICollection<MonAn> MonAns { get; set; } = new List<MonAn>();
 }

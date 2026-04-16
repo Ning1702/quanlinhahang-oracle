@@ -1,11 +1,11 @@
-﻿@model Quanlinhahang.Data.Models.Hoadon
+﻿@model Quanlinhahang.Data.Models.HoaDon
 
 @{
-    ViewData["Title"] = $"Hóa Đơn #{Model.Hoadonid}";
+    ViewData["Title"] = $"Hóa Đơn #{Model.HoaDonId}";
     var returnUrl = ViewBag.ReturnUrl as string ?? Url.Action("Index");
 }
 
-<h2 class="mt-3">Hóa Đơn #@Model.Hoadonid</h2>
+<h2 class="mt-3">Hóa Đơn #@Model.HoaDonId</h2>
 <hr />
 
 <div class="row">
@@ -14,19 +14,19 @@
         <dl class="row">
 
             <dt class="col-sm-5">Ngày lập</dt>
-            <dd class="col-sm-7">@Model.Ngaylap.ToString("dd/MM/yyyy HH:mm")</dd>
+            <dd class="col-sm-7">@(Model.NgayLap?.ToString("dd/MM/yyyy HH:mm") ?? "---")</dd>
 
             <dt class="col-sm-5">Trạng thái</dt>
-            <dd class="col-sm-7">@(Model.Trangthai?.Tentrangthai ?? "---")</dd>
+            <dd class="col-sm-7">@(Model.TrangThai?.TenTrangThai ?? "---")</dd>
 
             <dt class="col-sm-5">Hình thức thanh toán</dt>
-            <dd class="col-sm-7">@(Model.Hinhthucthanhtoan ?? "Tiền mặt")</dd>
+            <dd class="col-sm-7">Tiền mặt</dd>
 
             <dt class="col-sm-5">Mã Đặt bàn</dt>
             <dd class="col-sm-7">
-                @if (Model.Datban != null)
+                @if (Model.DatBanId != null)
                 {
-                    <a href="@Url.Action("Details", "Datbans", new { id = Model.Datbanid })">#@Model.Datbanid</a>
+                    <a href="@Url.Action("Details", "DatBans", new { id = Model.DatBanId })">#@Model.DatBanId</a>
                 }
                 else
                 {
@@ -34,15 +34,15 @@
                 }
             </dd>
 
-            <dt class="col-sm-5">Loại bàn / phòng</dt>
+            <dt class="col-sm-5">Bàn / Phòng</dt>
             <dd class="col-sm-7">
-                @(Model.Datban?.Banphong?.Loaibanphong != null
-                                ? Model.Datban.Banphong.Loaibanphong.Tenloai // Sửa: TenLoai -> Tenloai
+                @(Model.DatBan?.BanPhong != null
+                                ? Model.DatBan.BanPhong.TenBanPhong
                                 : "Không yêu cầu")
             </dd>
 
-            <dt class="col-sm-5">Nhân viên lập</dt>
-            <dd class="col-sm-7">@Model.Taikhoanid</dd>
+            <dt class="col-sm-5">Nhân viên lập (ID)</dt>
+            <dd class="col-sm-7">@Model.TaiKhoanId</dd>
 
         </dl>
     </div>
@@ -59,18 +59,15 @@
                 </tr>
             </thead>
             <tbody>
-                @if (Model.Chitiethoadons != null)
+                @if (Model.ChiTietHoaDons != null)
                 {
-                    foreach (var item in Model.Chitiethoadons)
+                    foreach (var item in Model.ChiTietHoaDons)
                     {
                         <tr>
-                            <td>@(item.Monan?.Tenmon ?? "Món đã xóa")</td>
-
-                            <td class="text-end">@item.Soluong</td>
-
-                            <td class="text-end">@item.Dongia.ToString("#,##0")</td>
-
-                            <td class="text-end">@((item.Soluong * item.Dongia).ToString("#,##0"))</td>
+                            <td>@(item.MonAn?.TenMon ?? "Món đã xóa")</td>
+                            <td class="text-end">@item.SoLuong</td>
+                            <td class="text-end">@item.DonGia?.ToString("#,##0")</td>
+                            <td class="text-end">@((item.SoLuong * (item.DonGia ?? 0))?.ToString("#,##0"))</td>
                         </tr>
                     }
                 }
@@ -78,29 +75,29 @@
 
             <tfoot class="table-light">
                 @{
-                    // Sửa logic tính tổng: Dùng (Soluong * Dongia) thay vì thuộc tính ThanhTien
                     decimal subTotal = 0;
-                    if (Model.Chitiethoadons != null)
+                    if (Model.ChiTietHoaDons != null)
                     {
-                        subTotal = Model.Chitiethoadons.Sum(i => i.Soluong * i.Dongia);
+                        subTotal = Model.ChiTietHoaDons.Sum(i => (decimal)(i.SoLuong * (i.DonGia ?? 0)));
                     }
 
-                    var vat = subTotal * 0.1m; // VAT 10% (tùy chỉnh nếu cần)
-                    var finalTotal = (subTotal + vat);
-                    if (finalTotal < 0) finalTotal = 0;
+                    // Sử dụng cột Vatpercent từ DB (ví dụ: 10 đại diện cho 10%)
+                    var vatPercent = Model.Vatpercent ?? 10m;
+                    var vatAmount = subTotal * (vatPercent / 100m);
+                    var finalTotal = subTotal + vatAmount;
                 }
                 <tr>
                     <td colspan="3" class="text-end">Tạm tính:</td>
                     <td class="text-end">@subTotal.ToString("#,##0")</td>
                 </tr>
                 <tr>
-                    <td colspan="3" class="text-end">VAT (10%):</td>
-                    <td class="text-end">@vat.ToString("#,##0")</td>
+                    <td colspan="3" class="text-end">VAT (@vatPercent%):</td>
+                    <td class="text-end">@vatAmount.ToString("#,##0")</td>
                 </tr>
 
                 <tr class="h5">
                     <td colspan="3" class="text-end"><strong>Thành tiền:</strong></td>
-                    <td class="text-end"><strong>@finalTotal.ToString("#,##0")</strong></td>
+                    <td class="text-end"><strong>@(Model.TongTien?.ToString("#,##0") ?? finalTotal.ToString("#,##0"))</strong></td>
                 </tr>
             </tfoot>
         </table>
@@ -110,7 +107,7 @@
 <hr />
 
 <div class="text-end">
-    <a href="@Url.Action("Print", new { id = Model.Hoadonid })" target="_blank" class="btn btn-warning me-2">
+    <a href="@Url.Action("Print", new { id = Model.HoaDonId })" target="_blank" class="btn btn-warning me-2">
         In hóa đơn
     </a>
 

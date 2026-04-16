@@ -1,0 +1,126 @@
+@model Quanlinhahang.Data.Models.MonAn
+@{
+    ViewData["Title"] = "Thêm món ăn";
+}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="container my-4">
+    <a asp-controller="MonAns" asp-action="Index" class="btn btn-success mb-3">
+        <i class="fa fa-arrow-left"></i> Quay lại danh sách
+    </a>
+
+    <div class="mx-auto bg-white p-5 rounded shadow" style="max-width:900px;">
+        <h2 class="text-center mb-4 fw-bold">Thêm món ăn mới</h2>
+
+        <form id="createForm" asp-action="Create" enctype="multipart/form-data" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="TenMon" class="form-label fw-semibold">Tên món</label>
+                <input asp-for="TenMon" class="form-control" placeholder="Nhập tên món ăn..." required />
+                <span asp-validation-for="TenMon" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DanhMucId" class="form-label fw-semibold">Danh mục</label>
+                @* Lưu ý: asp-items thường lấy từ ViewBag.DanhMucId hoặc ViewBag.DanhMucList *@
+                <select asp-for="DanhMucId" class="form-select" asp-items="ViewBag.DanhMucId" required>
+                    <option value="">-- Chọn danh mục món ăn --</option>
+                </select>
+                <span asp-validation-for="DanhMucId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DonGia" class="form-label fw-semibold">Đơn giá (VNĐ)</label>
+                <input asp-for="DonGia" class="form-control" type="number" step="1000" placeholder="Ví dụ: 50000" required />
+                <span asp-validation-for="DonGia" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="TrangThai" class="form-label fw-semibold">Trạng thái kinh doanh</label>
+                <select asp-for="TrangThai" class="form-select">
+                    <option value="Còn bán">Còn bán</option>
+                    <option value="Hết hàng">Hết hàng</option>
+                    <option value="Ngừng kinh doanh">Ngừng kinh doanh</option>
+                </select>
+                <span asp-validation-for="TrangThai" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Hình ảnh minh họa</label>
+                <input type="file" id="fHinhAnh" name="fHinhAnh" class="form-control" accept="image/*" onchange="previewImage(event)" />
+                <div id="imagePreview" class="text-center mt-3">
+                    @* Khu vực hiển thị ảnh preview *@
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="MoTa" class="form-label fw-semibold">Mô tả món ăn</label>
+                <textarea asp-for="MoTa" class="form-control" rows="4" placeholder="Nhập mô tả chi tiết về nguyên liệu hoặc cách chế biến..."></textarea>
+                <span asp-validation-for="MoTa" class="text-danger"></span>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                    <i class="fa fa-save"></i> Lưu món ăn
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Hàm hiển thị ảnh ngay lập tức khi người dùng chọn file
+    function previewImage(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById("imagePreview");
+        preview.innerHTML = '';
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                const img = document.createElement('img');
+                img.src = ev.target.result;
+                img.style.maxWidth = '300px';
+                img.style.maxHeight = '300px';
+                img.style.borderRadius = '12px';
+                img.style.boxShadow = '0 4px 15px rgba(0,0,0,0.15)';
+                img.style.border = '2px solid #ddd';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Xử lý xác nhận trước khi submit form bằng SweetAlert2
+    document.getElementById('createForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        Swal.fire({
+            title: "Xác nhận thêm món ăn?",
+            text: "Bạn có chắc chắn các thông tin đã chính xác?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#0d6efd",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Đúng, thêm ngay!",
+            cancelButtonText: "Kiểm tra lại"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.submit(); // Sử dụng this thay vì e.target để đảm bảo ngữ cảnh
+            }
+        });
+    });
+</script>
+
+@if (TempData["msg"] != null)
+{
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Thành công!',
+            text: '@TempData["msg"]',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    </script>
+}

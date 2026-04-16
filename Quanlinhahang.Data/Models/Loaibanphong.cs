@@ -3,15 +3,13 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Loaibanphong
+public partial class LoaiBanPhong
 {
-    public int Loaibanphongid { get; set; }
+    public int LoaiBanPhongId { get; set; }
 
-    public string Tenloai { get; set; } = null!;
+    public string? TenLoai { get; set; }
 
-    public string? Mota { get; set; }
+    public decimal? PhuThu { get; set; }
 
-    public long Phuthu { get; set; }
-
-    public virtual ICollection<Banphong> Banphongs { get; set; } = new List<Banphong>();
+    public virtual ICollection<BanPhong> BanPhongs { get; set; } = new List<BanPhong>();
 }

@@ -3,17 +3,17 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Hangthanhvien
+public partial class HangThanhVien
 {
-    public int Hangthanhvienid { get; set; }
+    public int HangThanhVienId { get; set; }
 
-    public string Tenhang { get; set; } = null!;
+    public string TenHang { get; set; } = null!;
 
-    public string? Mota { get; set; }
+    public int DiemToiThieu { get; set; }
 
-    public int Diemtoithieu { get; set; }
+    public int? DiemToiDa { get; set; }
 
-    public int? Diemtoida { get; set; }
+    public decimal? TiLeGiamGia { get; set; }
 
-    public virtual ICollection<Khachhang> Khachhangs { get; set; } = new List<Khachhang>();
+    public virtual ICollection<KhachHang> KhachHangs { get; set; } = new List<KhachHang>();
 }

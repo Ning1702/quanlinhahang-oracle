@@ -1,0 +1,134 @@
+@model Quanlinhahang.Data.Models.NhanVien
+
+@{
+    ViewData["Title"] = "Sửa nhân viên";
+}
+
+<div class="form-container">
+    <h2 class="text-center mb-4">Sửa nhân viên</h2>
+
+    <form id="editForm" asp-action="Edit" method="post">
+        @* Chuẩn hóa PascalCase cho các trường Hidden *@
+        <input type="hidden" asp-for="NhanVienId" />
+        <input type="hidden" asp-for="TaiKhoanId" />
+        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+        <div class="section-box mb-4">
+            <h4>Mã nhân viên</h4>
+            <input class="form-control" value="@Model.NhanVienId" disabled />
+        </div>
+
+        <div class="section-box mb-4">
+            <h4>Thông tin nhân viên</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>Họ tên</label>
+                    <input asp-for="HoTen" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label>Số điện thoại</label>
+                    <input asp-for="SoDienThoai" class="form-control" required />
+                    <span class="text-danger">@ViewBag.PhoneError</span>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label>Chức vụ</label>
+                    <select asp-for="ChucVu" class="form-control">
+                        <option value="Quản lý">Quản lý</option>
+                        <option value="Phục vụ">Phục vụ</option>
+                        <option value="Bếp">Bếp</option>
+                        <option value="Lễ tân">Lễ tân</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label>Ngày vào làm</label>
+                    @* Xử lý DateOnly: Input type="date" cần định dạng yyyy-MM-dd *@
+                    <input asp-for="NgayVaoLam" type="date" class="form-control"
+                           value="@(Model.NgayVaoLam?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div class="col-md-4">
+                    <label>Trạng thái</label>
+                    <select asp-for="TrangThai" class="form-control">
+                        <option value="Đang làm">Đang làm</option>
+                        <option value="Tạm nghỉ">Tạm nghỉ</option>
+                        <option value="Nghỉ việc">Nghỉ việc</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-box mb-4">
+            <h4>Thông tin tài khoản</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>Tên đăng nhập</label>
+                    <input name="TenDangNhap" class="form-control" value="@Model.TaiKhoan?.TenDangNhap" required />
+                    <span class="text-danger">@ViewBag.UsernameError</span>
+                </div>
+                <div class="col-md-6">
+                    <label>Mật khẩu (Để trống nếu không đổi)</label>
+                    @* Mật khẩu thường không hiển thị lại bản Hash để bảo mật *@
+                    <input name="MatKhau" type="text" class="form-control" placeholder="Nhập mật khẩu mới..." />
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Vai trò</label>
+                <select name="VaiTro" class="form-control">
+                    @{
+                        string currentRole = Model.TaiKhoan?.VaiTro?.ToString() ?? "";
+                    }
+                    <option value="Admin" selected="@(currentRole == "Admin")">Admin</option>
+                    <option value="Staff" selected="@(currentRole == "Staff")">Nhân viên</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a asp-action="Index" class="btn btn-secondary me-3">Hủy</a>
+            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById("editForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        Swal.fire({
+            title: "Xác nhận lưu thay đổi?",
+            text: "Thông tin nhân viên sẽ được cập nhật vào hệ thống.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Lưu",
+            cancelButtonText: "Hủy",
+            confirmButtonColor: "#0d6efd"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                e.target.submit();
+            }
+        });
+    });
+</script>
+
+<style>
+    .section-box {
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .form-container {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+    }
+</style>

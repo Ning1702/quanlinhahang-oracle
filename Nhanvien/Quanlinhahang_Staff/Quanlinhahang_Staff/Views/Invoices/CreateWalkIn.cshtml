@@ -1,0 +1,131 @@
+﻿@model Quanlinhahang_Staff.Models.ViewModels.InvoiceCreateVM
+
+@{
+    ViewData["Title"] = "Tạo Hóa Đơn Mới";
+}
+
+<div class="card shadow-sm mt-4 bg-white text-dark mx-auto" style="max-width: 800px;">
+    <div class="card-header bg-light py-3">
+        <h4 class="mb-0 text-center fw-bold" style="color: #c7a368;">
+            <i class="fas fa-file-invoice me-2"></i>TẠO HÓA ĐƠN MỚI
+        </h4>
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="CreateWalkIn" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-4 position-relative border p-3 rounded bg-light">
+                <label class="form-label fw-bold text-dark">
+                    <i class="fas fa-user-circle me-1 text-warning"></i> Thông tin khách hàng (Tùy chọn)
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" id="txtSearchCustomer" class="form-control" placeholder="Nhập tên hoặc SĐT khách..." autocomplete="off">
+                    <button class="btn btn-outline-danger" type="button" id="btnClearCustomer" title="Bỏ khách hàng">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <small class="text-muted fst-italic">Bỏ trống nếu là khách vãng lai không lưu thông tin.</small>
+
+                <input type="hidden" asp-for="KhachHangID" id="hfKhachHangID" />
+                <ul id="customerResults" class="list-group position-absolute w-100 shadow" style="display:none; z-index: 1000; max-height: 250px; overflow-y: auto; top: 80%;"></ul>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-12">
+                    <label class="form-label fw-bold text-dark">Bàn / Phòng phục vụ</label>
+                    <select asp-for="BanPhongID" class="form-select">
+                        <option value="">-- Khách mang đi / Chưa chọn bàn --</option>
+                        @foreach (var b in ViewBag.BanPhongs)
+                        {
+                            <option value="@b.BanPhongId">@b.TenBanPhong (@b.LoaiBanPhong?.TenLoai)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-dark">Ngày đến</label>
+                    <input asp-for="NgayDen" type="date" class="form-control" value="@Model.NgayDen.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="NgayDen" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-dark">Khung giờ</label>
+                    <select asp-for="KhungGioID" class="form-select">
+                        @foreach (var kg in ViewBag.ListKhungGio)
+                        {
+                            <option value="@kg.KhungGioId">@kg.TenKhungGio (@kg.GioBatDau - @kg.GioKetThuc)</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between pt-3 border-top">
+                <a asp-action="Index" class="btn btn-secondary px-4">Quay lại</a>
+                <button type="submit" class="btn btn-success px-5 fw-bold">
+                    <i class="fas fa-arrow-right me-2"></i>Tạo đơn & Chọn món
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const txtSearch = document.getElementById('txtSearchCustomer');
+            const hfId = document.getElementById('hfKhachHangID');
+            const resultBox = document.getElementById('customerResults');
+            const btnClear = document.getElementById('btnClearCustomer');
+
+            txtSearch.addEventListener('input', function () {
+                let keyword = this.value.trim();
+
+                if (keyword.length === 0) {
+                    hfId.value = '';
+                    resultBox.style.display = 'none';
+                    return;
+                }
+
+                if (keyword.length < 2) return;
+
+                fetch(`/Invoices/SearchCustomer?keyword=${encodeURIComponent(keyword)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        resultBox.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(item => {
+                                let li = document.createElement('li');
+                                li.className = 'list-group-item list-group-item-action text-dark';
+                                li.style.cursor = 'pointer';
+                                li.innerHTML = `<i class="fas fa-user text-muted me-2"></i> <strong>${item.text}</strong>`;
+
+                                li.onclick = function () {
+                                    txtSearch.value = item.text;
+                                    hfId.value = item.id;
+                                    resultBox.style.display = 'none';
+                                };
+                                resultBox.appendChild(li);
+                            });
+                        } else {
+                            resultBox.innerHTML = '<li class="list-group-item text-danger">Không tìm thấy khách hàng!</li>';
+                        }
+                        resultBox.style.display = 'block';
+                    });
+            });
+
+            btnClear.addEventListener('click', function () {
+                txtSearch.value = '';
+                hfId.value = '';
+                resultBox.style.display = 'none';
+                txtSearch.focus();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!txtSearch.contains(e.target) && !resultBox.contains(e.target)) {
+                    resultBox.style.display = 'none';
+                }
+            });
+        });
+    </script>
+}

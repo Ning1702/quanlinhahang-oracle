@@ -3,21 +3,21 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Banphong
+public partial class BanPhong
 {
-    public int Banphongid { get; set; }
+    public int BanPhongId { get; set; }
 
-    public int Loaibanphongid { get; set; }
+    public int? LoaiBanPhongId { get; set; }
 
-    public string Tenbanphong { get; set; } = null!;
+    public string? TenBanPhong { get; set; }
 
-    public int Succhua { get; set; }
+    public int? SucChua { get; set; }
 
-    public bool Trangthai { get; set; }
+    public int? TrangThaiId { get; set; }
 
-    public virtual ICollection<Datban> Datbans { get; set; } = new List<Datban>();
+    public virtual ICollection<DatBan> DatBans { get; set; } = new List<DatBan>();
 
-    public virtual ICollection<Hoadon> Hoadons { get; set; } = new List<Hoadon>();
+    public virtual LoaiBanPhong? LoaiBanPhong { get; set; }
 
-    public virtual Loaibanphong Loaibanphong { get; set; } = null!;
+    public virtual BanPhongTrangThai? TrangThai { get; set; }
 }

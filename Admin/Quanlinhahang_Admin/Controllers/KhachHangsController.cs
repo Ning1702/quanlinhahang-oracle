@@ -14,61 +14,74 @@ namespace Quanlinhahang_Admin.Controllers
             _context = context;
         }
 
+        // ============================================================
+        // 1. DANH SÁCH KHÁCH HÀNG & TÌM KIẾM
+        // ============================================================
         public async Task<IActionResult> Index(string? searchType, string? searchPhone, string? searchRank)
         {
             searchType = searchType ?? "all";
 
-            var query = _context.Khachhangs
-                .Include(k => k.Hangthanhvien)
-                .AsQueryable(); ;
+            // Cập nhật PascalCase: KhachHangs, HangThanhVien
+            var query = _context.KhachHangs
+                .Include(k => k.HangThanhVien)
+                .AsQueryable();
 
             ViewBag.SearchType = searchType;
             ViewBag.SearchPhone = searchPhone ?? "";
             ViewBag.SearchRank = searchRank ?? "";
 
-            if (searchType == "all")
-                return View(await query.ToListAsync());
-
             if (searchType == "phone" && !string.IsNullOrWhiteSpace(searchPhone))
             {
-                query = query.Where(k => k.Sodienthoai.Contains(searchPhone));
+                // Cập nhật PascalCase: SoDienThoai
+                query = query.Where(k => k.SoDienThoai.Contains(searchPhone));
             }
             else if (searchType == "rank" && !string.IsNullOrWhiteSpace(searchRank))
             {
-                query = query.Where(k => k.Hangthanhvien != null && k.Hangthanhvien.Tenhang == searchRank);
+                // Cập nhật PascalCase: HangThanhVien, TenHang
+                query = query.Where(k => k.HangThanhVien != null && k.HangThanhVien.TenHang == searchRank);
             }
 
-            var list = await query.OrderByDescending(k => k.Khachhangid).ToListAsync();
+            // Cập nhật PascalCase: KhachHangId
+            var list = await query.OrderByDescending(k => k.KhachHangId).ToListAsync();
 
-            if (!list.Any())
-                TempData["msg"] = "Không tìm thấy khách hàng nào!";
+            if (!list.Any() && searchType != "all")
+            {
+                TempData["msg"] = "Không tìm thấy khách hàng nào khớp với điều kiện tìm kiếm!";
+            }
 
-            return View(list); 
+            return View(list);
         }
 
+        // ============================================================
+        // 2. XÁC NHẬN XÓA (AJAX)
+        // ============================================================
         [HttpPost]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var kh = await _context.Khachhangs.FindAsync(id);
+            // Cập nhật PascalCase: KhachHangs
+            var kh = await _context.KhachHangs.FindAsync(id);
             if (kh == null)
                 return NotFound();
 
             try
             {
-                var lichSuDatBan = await _context.Datbans.Where(d => d.Khachhangid == id).ToListAsync();
+                // Xử lý ràng buộc dữ liệu: Gán null cho lịch sử đặt bàn của khách này trước khi xóa
+                // Cập nhật PascalCase: DatBans, KhachHangId
+                var lichSuDatBan = await _context.DatBans.Where(d => d.KhachHangId == id).ToListAsync();
                 foreach (var item in lichSuDatBan)
                 {
-                    item.Khachhangid = null;
+                    item.KhachHangId = null;
                 }
 
-                _context.Khachhangs.Remove(kh);
+                _context.KhachHangs.Remove(kh);
                 await _context.SaveChangesAsync();
 
-                return Ok(); // Trả về 200 OK cho AJAX
+                return Ok();
             }
             catch (Exception ex)
             {
-                return BadRequest("Không thể xóa khách hàng: " + ex.Message);
+                // Trả về lỗi nếu có ràng buộc dữ liệu khác (ví dụ: Hóa đơn)
+                return BadRequest("Không thể xóa khách hàng do có dữ liệu liên quan: " + ex.Message);
             }
         }
     }

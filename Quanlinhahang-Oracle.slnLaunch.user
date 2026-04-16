@@ -1,0 +1,19 @@
+[
+  {
+    "Name": "ProjectF",
+    "Projects": [
+      {
+        "Path": "Admin\\Quanlinhahang_Admin\\Quanlinhahang_Admin.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "Nhanvien\\Quanlinhahang_Staff\\Quanlinhahang_Staff\\Quanlinhahang_Staff.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "Khachhang\\Quanlinhahang_Customer\\Quanlinhahang_Customer\\Quanlinhahang_Customer.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

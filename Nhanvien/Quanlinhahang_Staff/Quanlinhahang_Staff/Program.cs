@@ -1,49 +1,40 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Quanlinhahang.Data;
 using Quanlinhahang.Data.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("QLNH");
 
-// ====================== CẤU HÌNH DỊCH VỤ ======================
-builder.Services.AddControllersWithViews();
-
-// Kết nối DB (Giữ nguyên connection string của Staff)
+// ====================== 1. CẤU HÌNH DỊCH VỤ ======================
 builder.Services.AddDbContext<QuanLyNhaHangContext>(options =>
-    options.UseOracle(builder.Configuration.GetConnectionString("QLNH")));
+    options.UseSqlServer(AppConfig.ConnectionString));
 
-// 🔥 QUAN TRỌNG: Cấu hình DataProtection (Phải GIỐNG HỆT bên Admin)
-// Để Staff hiểu được Cookie do Admin tạo ra và ngược lại
-var keyDirectory = new DirectoryInfo(@"C:\QuanLyNhaHang_Keys");
-if (!keyDirectory.Exists) keyDirectory.Create();
-
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(keyDirectory)
-    .SetApplicationName("QuanLyNhaHangApp"); // Tên App phải trùng khớp với bên Admin
-
-// 🧩 Cấu hình Authentication (Phải GIỐNG HỆT bên Admin)
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.Cookie.Name = "QLNH.Auth"; // Tên Cookie chung
-        options.Cookie.Domain = "localhost"; // Chia sẻ giữa các port
-        options.LoginPath = "/Account/Login"; // Đường dẫn ảo (thực tế Staff sẽ redirect sang Admin)
-        options.AccessDeniedPath = "/Account/AccessDenied";
-        options.SlidingExpiration = true;
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-    });
-
-// ⚙️ Session
+// 🔥 CẤU HÌNH SESSION
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(60);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.Name = ".QLNH.Staff.Session";
 });
 
-// ====================== BUILD APP ======================
+// SỬA LỖI 2: Đổi /TaiKhoan/ thành /Account/ cho khớp với Controller của bạn
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+    });
+
+builder.Services.AddControllersWithViews();
+
+builder.Services.AddSignalR();
+
+// ====================== 2. BUILD APP ======================
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -55,15 +46,31 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "..", "..", "..", "SharedImages")),
+    RequestPath = "/SharedImages"
+});
+
+// KÍCH HOẠT SESSION
+app.UseSession();
+
 app.UseRouting();
 
-// 🧩 BẮT BUỘC: Phải có UseAuthentication trước UseAuthorization
+// SỬA LỖI 1: BẮT BUỘC PHẢI CÓ DÒNG NÀY VÀ PHẢI ĐỨNG TRƯỚC AUTHORIZATION
 app.UseAuthentication();
-app.UseSession();
+
 app.UseAuthorization();
 
+app.MapHub<Quanlinhahang_Staff.Hubs.NotificationHub>("/notificationHub");
+
+// Cấu hình Route mặc định
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Invoices}/{action=Index}/{id?}"); // Mặc định Staff vào trang Hóa đơn
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.Run();

@@ -3,52 +3,48 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using Quanlinhahang.Data.Models;
 using System.Text;
+using Quanlinhahang.Data.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Quanlinhahang_Admin.Controllers
 {
     public class AccountController : Controller
     {
         private readonly QuanLyNhaHangContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(QuanLyNhaHangContext context)
+        public AccountController(QuanLyNhaHangContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
-        // ======================== LOGIN GET ========================
         [HttpGet]
         public IActionResult Login()
         {
+            // Nếu đã đăng nhập thì đẩy về Home luôn
             if (User.Identity?.IsAuthenticated == true)
             {
-                if (User.IsInRole("Staff"))
-                {
-                    var userId = User.FindFirst("UserId")?.Value ?? "";
-                    return Redirect($"https://localhost:7163/Auth/FromAdmin?userId={userId}");
-                }
-                return RedirectToAction("Index", "Home", new { area = "Admin" });
+                return RedirectToAction("Index", "Home");
             }
             return View();
         }
 
-        // ======================== LOGIN POST ========================
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                ViewBag.Error = "Vui lòng nhập đầy đủ thông tin!";
+                ViewBag.Error = "Vui lòng nhập tên đăng nhập và mật khẩu!";
                 return View();
             }
 
-            // 1. Mã hóa mật khẩu
-            string passHash = GetSHA256(password);
+            string inputHash = GetSHA256(password);
 
-            // 2. Tìm user
-            var user = _context.Taikhoans
-                    .FirstOrDefault(t => t.Tendangnhap == username && t.Matkhauhash == passHash);
+            // Cập nhật: PascalCase cho các thuộc tính TaiKhoans
+            var user = await _context.TaiKhoans
+                .FirstOrDefaultAsync(t => t.TenDangNhap == username && t.MatKhauHash == inputHash);
 
             if (user == null)
             {
@@ -56,67 +52,78 @@ namespace Quanlinhahang_Admin.Controllers
                 return View();
             }
 
-            // 3. Ghi Session
-            HttpContext.Session.SetInt32("UserId", user.Taikhoanid);
-            string role = user.Vaitro.ToString();
+            // ============================================================
+            // KIỂM TRA QUYỀN TRUY CẬP (Dựa trên chuỗi trong SQL Server)
+            // ============================================================
+            string dbRoleRaw = user.VaiTro ?? "";
+            string finalRole = "";
 
-            // 4. Tạo Cookie
+            // Kiểm tra nếu là Admin hoặc Quản lý
+            if (dbRoleRaw.Contains("Admin") || dbRoleRaw.Contains("Quản lý"))
+            {
+                finalRole = "Admin";
+            }
+            // Kiểm tra nếu là Nhân viên/Staff
+            else if (dbRoleRaw.Contains("Staff") || dbRoleRaw.Contains("Nhân viên"))
+            {
+                finalRole = "Staff";
+            }
+            else
+            {
+                ViewBag.Error = "Tài khoản khách hàng không có quyền truy cập trang quản trị!";
+                return View();
+            }
+
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.Tendangnhap),
-                new Claim(ClaimTypes.Role, role),
-                new Claim("UserId", user.Taikhoanid.ToString())
+                new Claim(ClaimTypes.Name, user.TenDangNhap),
+                new Claim("UserId", user.TaiKhoanId.ToString()),
+                new Claim(ClaimTypes.Role, finalRole)
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identity),
-                new AuthenticationProperties
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTime.UtcNow.AddMinutes(60)
-                });
+            var principal = new ClaimsPrincipal(identity);
 
-            // ================= PHÂN QUYỀN & CHUYỂN HƯỚNG =================
+            // Thiết lập Cookie đăng nhập
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            // === TRƯỜNG HỢP 1: LÀ ADMIN ===
-            if (role == "Admin")
+            // ============================================================
+            // ĐIỀU HƯỚNG DỰA TRÊN ROLE
+            // ============================================================
+            if (finalRole == "Admin")
             {
+                // Admin ở lại trang quản trị hiện tại
                 return RedirectToAction("Index", "Home");
             }
-
-            // === TRƯỜNG HỢP 2: LÀ STAFF ===
-            if (role == "Staff")
+            else if (finalRole == "Staff")
             {
-                string staffPort = "7163";
-                string staffUrl = $"https://localhost:{staffPort}/Auth/FromAdmin?userId={user.Taikhoanid}";
-                return Redirect(staffUrl);
+                // Staff chuyển sang dự án Staff chuyên dụng (StaffUrl cấu hình trong appsettings.json)
+                string staffBaseUrl = _configuration["AppUrls:StaffUrl"];
+
+                if (string.IsNullOrEmpty(staffBaseUrl))
+                {
+                    staffBaseUrl = "https://localhost:7163"; // Port mặc định dự án Staff của bạn
+                }
+
+                // Redirect sang link xác thực trung gian giữa Admin và Staff
+                string redirectUrl = $"{staffBaseUrl}/Auth/FromAdmin?userId={user.TaiKhoanId}";
+                return Redirect(redirectUrl);
             }
 
-            ViewBag.Error = "Tài khoản không có quyền truy cập!";
-            await HttpContext.SignOutAsync();
-            return View();
+            return RedirectToAction("Index", "Home");
         }
 
-        // ======================== ACCESS DENIED (SỬA LỖI 404 HÌNH 4) ========================
         [HttpGet]
-        public IActionResult AccessDenied()
-        {
-            // Trả về view thông báo lỗi thay vì trang trắng 404
-            return View();
-        }
-
-        // ======================== LOGOUT ========================
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login");
         }
 
+        // Hàm băm mật khẩu SHA256 đồng bộ toàn hệ thống
         public static string GetSHA256(string str)
         {
+            if (string.IsNullOrEmpty(str)) return "";
             using (SHA256 sha256 = SHA256.Create())
             {
                 byte[] fromData = Encoding.UTF8.GetBytes(str);

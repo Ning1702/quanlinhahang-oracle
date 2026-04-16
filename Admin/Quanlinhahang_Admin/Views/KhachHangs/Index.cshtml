@@ -1,0 +1,194 @@
+﻿@model IEnumerable<Quanlinhahang.Data.Models.KhachHang>
+
+@{
+    ViewData["Title"] = "Quản lý khách hàng";
+
+    // Lấy dữ liệu từ ViewBag để điền lại vào Form search
+    string searchType = ViewBag.SearchType as string ?? "all";
+    string searchPhone = ViewBag.SearchPhone as string ?? "";
+    string searchRank = ViewBag.SearchRank as string ?? "";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<a asp-controller="Home" asp-action="Index" class="exit-square">✕</a>
+
+<div class="container mt-4">
+    <h2 class="text-center fw-bold mb-4">Quản lý Khách hàng</h2>
+
+    <div class="filter-card shadow-sm p-4 mb-4">
+        <form method="get" asp-action="Index">
+
+            <div class="mb-3">
+                <label class="fw-semibold">Tiêu chí tìm kiếm:</label>
+                <select id="searchType" name="searchType" class="form-select">
+                    <option value="all" selected="@(searchType == "all")">Tất cả khách hàng</option>
+                    <option value="phone" selected="@(searchType == "phone")">Tìm theo Số điện thoại</option>
+                    <option value="rank" selected="@(searchType == "rank")">Tìm theo Hạng thành viên</option>
+                </select>
+            </div>
+
+            <div id="phoneBox" class="mb-3" style="display:none;">
+                <input type="text" class="form-control" name="searchPhone" value="@searchPhone" placeholder="Nhập số điện thoại...">
+            </div>
+
+            <div id="rankBox" class="mb-3" style="display:none;">
+                <select class="form-select" name="searchRank">
+                    <option value="">-- Chọn hạng --</option>
+                    <option value="Thành viên mới" selected="@(searchRank == "Thành viên mới")">Thành viên mới</option>
+                    <option value="Vàng" selected="@(searchRank == "Vàng")">Vàng</option>
+                    <option value="Kim cương" selected="@(searchRank == "Kim cương")">Kim cương</option>
+                </select>
+            </div>
+
+            <div class="d-flex justify-content-center mt-3">
+                <button class="btn btn-primary px-5 fw-semibold"><i class="fas fa-search"></i> Tìm kiếm</button>
+            </div>
+        </form>
+    </div>
+
+    <table class="table table-bordered table-striped text-center align-middle shadow-sm bg-white">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>SĐT</th>
+                <th>Địa chỉ</th>
+                <th>Hạng</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="7" class="text-muted py-3">Không tìm thấy dữ liệu phù hợp.</td></tr>
+            }
+            else
+            {
+                foreach (var item in Model)
+                {
+                    <tr id="row-@item.KhachHangId">
+                        <td>@item.KhachHangId</td>
+                        <td class="fw-bold">@item.HoTen</td>
+                        <td>@item.Email</td>
+                        <td>@item.SoDienThoai</td>
+                        <td>@item.DiaChi</td>
+                        <td>
+                            @if (item.HangThanhVien != null)
+                            {
+                                <span class="badge bg-info text-dark">@item.HangThanhVien.TenHang</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Chưa xếp hạng</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="confirmDelete(@item.KhachHangId)">
+                                <i class="fa-solid fa-trash"></i> Xóa
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <div class="stat-card shadow-sm p-3 mt-4 text-center">
+        <h5 class="fw-bold mb-1">Tổng khách hàng</h5>
+        <div id="totalCount" class="fs-3 fw-bold text-primary">@Model.Count()</div>
+    </div>
+</div>
+
+<script>
+    // 1. Ẩn hiện ô tìm kiếm
+    function updateFilterUI() {
+        const type = document.getElementById("searchType").value;
+        document.getElementById("phoneBox").style.display = (type === "phone") ? "block" : "none";
+        document.getElementById("rankBox").style.display = (type === "rank") ? "block" : "none";
+    }
+    document.getElementById("searchType").addEventListener("change", updateFilterUI);
+    updateFilterUI(); // Chạy lần đầu
+
+    // 2. Xử lý xóa AJAX
+    function confirmDelete(id) {
+        Swal.fire({
+            title: 'Xóa khách hàng?',
+            text: "Dữ liệu đặt bàn cũ sẽ được giữ lại nhưng mất liên kết với khách này.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Xóa ngay',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Gọi API Xóa (Đường dẫn không có /Admin nữa)
+                fetch('/KhachHangs/DeleteConfirmed?id=' + id, { method: 'POST' })
+                .then(res => {
+                    if (res.ok) {
+                        // Xóa dòng trên giao diện
+                        document.getElementById('row-' + id)?.remove();
+
+                        // Cập nhật số lượng
+                        let totalEl = document.getElementById('totalCount');
+                        if (totalEl) totalEl.innerText = parseInt(totalEl.innerText) - 1;
+
+                        Swal.fire('Đã xóa!', 'Khách hàng đã bị xóa.', 'success');
+                    } else {
+                        Swal.fire('Lỗi!', 'Không thể xóa khách hàng này.', 'error');
+                    }
+                })
+                .catch(err => Swal.fire('Lỗi kết nối!', '', 'error'));
+            }
+        });
+    }
+</script>
+
+<style>
+    body {
+        background: #f5f7fb;
+    }
+
+    .container {
+        max-width: 1200px;
+    }
+
+    .filter-card {
+        background: #fff;
+        border-radius: 12px;
+    }
+
+    .exit-square {
+        position: fixed;
+        top: 20px;
+        right: 25px;
+        width: 40px;
+        height: 40px;
+        background: #dc3545;
+        color: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+
+        .exit-square:hover {
+            transform: scale(1.1);
+            background: #c82333;
+            color: white;
+        }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        width: 250px;
+        margin: 0 auto;
+    }
+</style>

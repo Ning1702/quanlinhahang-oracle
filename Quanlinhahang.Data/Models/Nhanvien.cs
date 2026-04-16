@@ -3,21 +3,21 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Nhanvien
+public partial class NhanVien
 {
-    public int Nhanvienid { get; set; }
+    public int NhanVienId { get; set; }
 
-    public int? Taikhoanid { get; set; }
+    public int? TaiKhoanId { get; set; }
 
-    public string Hoten { get; set; } = null!;
+    public string? HoTen { get; set; }
 
-    public string? Sodienthoai { get; set; }
+    public string? SoDienThoai { get; set; }
 
-    public string? Chucvu { get; set; }
+    public string? ChucVu { get; set; }
 
-    public DateTime? Ngayvaolam { get; set; }
+    public DateOnly? NgayVaoLam { get; set; }
 
-    public string Trangthai { get; set; } = null!;
+    public string? TrangThai { get; set; }
 
-    public virtual Taikhoan? Taikhoan { get; set; }
+    public virtual TaiKhoan? TaiKhoan { get; set; }
 }

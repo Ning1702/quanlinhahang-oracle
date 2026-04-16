@@ -3,23 +3,23 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Taikhoan
+public partial class TaiKhoan
 {
-    public int Taikhoanid { get; set; }
+    public int TaiKhoanId { get; set; }
 
-    public string Tendangnhap { get; set; } = null!;
+    public string? TenDangNhap { get; set; }
 
-    public string Matkhauhash { get; set; } = null!;
+    public string? MatKhauHash { get; set; }
 
     public string? Email { get; set; }
 
-    public VaiTroHeThong Vaitro { get; set; }
+    public string? VaiTro { get; set; }
 
-    public string Trangthai { get; set; } = null!;
+    public string? TrangThai { get; set; }
 
-    public virtual ICollection<Hoadon> Hoadons { get; set; } = new List<Hoadon>();
+    public virtual ICollection<HoaDon> HoaDons { get; set; } = new List<HoaDon>();
 
-    public virtual ICollection<Khachhang> Khachhangs { get; set; } = new List<Khachhang>();
+    public virtual KhachHang? KhachHang { get; set; }
 
-    public virtual ICollection<Nhanvien> Nhanviens { get; set; } = new List<Nhanvien>();
+    public virtual NhanVien? NhanVien { get; set; }
 }

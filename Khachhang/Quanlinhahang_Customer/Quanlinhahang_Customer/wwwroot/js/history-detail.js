@@ -26,13 +26,19 @@ $(document).ready(function () {
         currentItems = JSON.parse(JSON.stringify(originalItemsData));
     }
 
-    // --- CÁC HÀM RENDER VÀ SỰ KIỆN (GIỮ NGUYÊN) ---
+    // --- CÁC HÀM RENDER VÀ SỰ KIỆN (ĐÃ SỬA LỖI) ---
     function renderItems() {
         $summaryBody.empty();
         let total = 0;
-        const isViewing = $("#infoFieldset").is(":disabled");
+
+        // [SỬA LỖI]: Kiểm tra trạng thái fieldset để quyết định có disable nút hay không
+        // Nếu fieldset đang disabled (chế độ xem) -> nút cũng disabled
+        // Nếu fieldset đang enabled (chế độ sửa) -> nút enabled
+        const isViewing = $fieldset.is(":disabled");
+        const btnState = isViewing ? "disabled" : "";
         const displayStyle = isViewing ? 'display:none;' : '';
 
+        // Ẩn/Hiện cột Xóa tùy chế độ
         if (isViewing) $(".order-details-table th:last-child").hide();
         else $(".order-details-table th:last-child").show();
 
@@ -48,20 +54,21 @@ $(document).ready(function () {
             const thanhTien = donGia * item.soLuong;
             total += thanhTien;
 
+            // [QUAN TRỌNG]: Chèn biến ${btnState} vào các nút thay vì hardcode 'disabled'
             $summaryBody.append(`
                 <tr data-id="${item.monAnId}">
                     <td>${item.tenMon || 'Món không xác định'}</td>
                     <td class="align-right">${vnd(donGia)}</td>
                     <td style="text-align:center;">
                         <div class="qty-controls">
-                            <button class="qty-btn minus" data-id="${item.monAnId}" disabled>−</button>
+                            <button class="qty-btn minus" data-id="${item.monAnId}" ${btnState}>−</button>
                             <span class="qty">${item.soLuong}</span>
-                            <button class="qty-btn plus" data-id="${item.monAnId}" disabled>+</button>
+                            <button class="qty-btn plus" data-id="${item.monAnId}" ${btnState}>+</button>
                         </div>
                     </td>
                     <td class="align-right">${vnd(thanhTien)}</td>
                     <td style="text-align:center; ${displayStyle}">
-                        <button class="remove-btn" data-id="${item.monAnId}" disabled>&times;</button>
+                        <button class="remove-btn" data-id="${item.monAnId}" ${btnState}>&times;</button>
                     </td>
                 </tr>
             `);
@@ -70,15 +77,17 @@ $(document).ready(function () {
     }
 
     function setEditMode(isEditing) {
+        // Bật/Tắt fieldset
         $fieldset.prop("disabled", !isEditing);
-        $summaryBody.find(".qty-btn, .remove-btn").prop("disabled", !isEditing);
+
+        // Render lại items để cập nhật trạng thái nút (Enable/Disable) theo fieldset
+        renderItems();
+
         if (isEditing) {
-            $(".order-details-table th:last-child, .order-details-table td:last-child").show();
             $openAddMonAnModal.show();
             $btnEdit.hide(); $btnSave.show(); $btnCancel.show();
             $errorMsg.hide(); $successMsg.hide();
         } else {
-            $(".order-details-table th:last-child, .order-details-table td:last-child").hide();
             $openAddMonAnModal.hide();
             $btnEdit.show(); $btnSave.hide(); $btnCancel.hide();
         }
@@ -86,34 +95,46 @@ $(document).ready(function () {
 
     // Gắn sự kiện cơ bản
     $btnEdit.on("click", () => setEditMode(true));
+
     $btnCancel.on("click", () => {
         $form[0].reset();
-        if (typeof originalItemsData !== 'undefined') currentItems = JSON.parse(JSON.stringify(originalItemsData));
-        renderItems();
-        setEditMode(false);
+        // Khôi phục dữ liệu gốc khi hủy
+        if (typeof originalItemsData !== 'undefined') {
+            currentItems = JSON.parse(JSON.stringify(originalItemsData));
+        }
+        setEditMode(false); // Hàm này sẽ gọi renderItems() và khóa lại các nút
     });
 
+    // Sự kiện Tăng/Giảm số lượng
     $summaryBody.on("click", ".qty-btn", function (e) {
         e.preventDefault();
         const id = $(this).data("id");
-        const item = currentItems.find(i => i.monAnId === id);
+        // Ép kiểu về số để so sánh chính xác (tránh lỗi string "1" != number 1)
+        const item = currentItems.find(i => Number(i.monAnId) === Number(id));
+
         if (item) {
-            if ($(this).hasClass("plus")) item.soLuong++;
-            else if ($(this).hasClass("minus")) item.soLuong--;
+            if ($(this).hasClass("plus")) {
+                item.soLuong++;
+            } else if ($(this).hasClass("minus")) {
+                item.soLuong--;
+            }
+
             if (item.soLuong <= 0) item.soLuong = 1;
-            renderItems();
+            renderItems(); // Render lại (nút sẽ vẫn enable vì fieldset đang mở)
         }
     });
 
+    // Sự kiện Xóa món
     $summaryBody.on("click", ".remove-btn", function (e) {
         e.preventDefault();
         if (confirm("Xóa món này?")) {
-            currentItems = currentItems.filter(i => i.monAnId !== $(this).data("id"));
+            const id = $(this).data("id");
+            currentItems = currentItems.filter(i => Number(i.monAnId) !== Number(id));
             renderItems();
         }
     });
 
-    // Modal Bàn
+    // --- MODAL BÀN (Logic giữ nguyên) ---
     $("#openTableMapBtn").on("click", function (e) {
         e.preventDefault();
         if (!$fieldset.is(':disabled')) $tableMapModal.addClass("active");
@@ -128,29 +149,48 @@ $(document).ready(function () {
         setTimeout(() => $tableMapModal.removeClass("active"), 200);
     });
 
-    // Modal Món
-    $openAddMonAnModal.click(() => { $addMonAnModal.addClass("active"); $(".category-btn[data-category-id='all']").click(); });
+    // --- MODAL MÓN (Logic giữ nguyên) ---
+    $openAddMonAnModal.click(() => {
+        $addMonAnModal.addClass("active");
+        $(".category-btn[data-category-id='all']").click();
+    });
     $("#closeAddMonAnModal").click(() => $addMonAnModal.removeClass("active"));
+
     $(".menu-modal-sidebar").on("click", ".category-btn", function () {
-        $(".category-btn.active").removeClass("active"); $(this).addClass("active");
+        $(".category-btn.active").removeClass("active");
+        $(this).addClass("active");
         const cid = $(this).data("category-id");
         if (cid === "all") $("#addMonAnList .monan-item").show();
-        else { $("#addMonAnList .monan-item").hide(); $(`#addMonAnList .monan-item[data-monan-category-id="${cid}"]`).show(); }
-    });
-    $("#addMonAnList").on("click", ".btn-add-mon", function () {
-        const id = $(this).data("id");
-        const exist = currentItems.find(i => i.monAnId === id);
-        if (exist) exist.soLuong++;
-        else currentItems.push({ monAnId: id, tenMon: $(this).data("name"), soLuong: 1, donGia: parseFloat($(this).data("price")) });
-        renderItems(); $addMonAnModal.removeClass("active");
+        else {
+            $("#addMonAnList .monan-item").hide();
+            // Sửa selector cho chắc chắn (ép về string)
+            $(`#addMonAnList .monan-item[data-monan-category-id="${cid}"]`).show();
+        }
     });
 
-    // --- [QUAN TRỌNG] SỬA LỖI NÚT LƯU & BẮT LỖI 400 ---
-    // --- ĐOẠN CODE SỬA LỖI 400 (ÉP KIỂU DỮ LIỆU) ---
+    $("#addMonAnList").on("click", ".btn-add-mon", function () {
+        const id = $(this).data("id");
+        // Ép kiểu ID về số để tìm kiếm chính xác
+        const exist = currentItems.find(i => Number(i.monAnId) === Number(id));
+
+        if (exist) {
+            exist.soLuong++;
+        } else {
+            currentItems.push({
+                monAnId: id,
+                tenMon: $(this).data("name"),
+                soLuong: 1,
+                donGia: parseFloat($(this).data("price"))
+            });
+        }
+        renderItems();
+        $addMonAnModal.removeClass("active");
+    });
+
+    // --- SAVE (Gửi dữ liệu) ---
     $btnSave.on("click", function (e) {
         e.preventDefault();
 
-        // 1. Lấy thông tin User
         let username = "Guest";
         if (typeof getAuthState === 'function') {
             const authRaw = getAuthState();
@@ -160,34 +200,26 @@ $(document).ready(function () {
             }
         }
 
-        // 2. Lấy và ÉP KIỂU dữ liệu (Quan trọng nhất)
-        // ParseInt để đảm bảo là số nguyên, nếu lỗi thì về 0 hoặc 1
         let valGuestCount = parseInt($("#guestCount").val());
         if (isNaN(valGuestCount) || valGuestCount < 1) valGuestCount = 1;
 
         let valBanPhongId = parseInt($("#selectedBanPhongId").val());
-        if (isNaN(valBanPhongId)) valBanPhongId = null; // Bàn có thể null
+        if (isNaN(valBanPhongId)) valBanPhongId = null;
 
-        // 3. Tạo Payload chuẩn (Khớp với ViewModel C#)
         const payload = {
-            Username: String(username),         // Đảm bảo là chuỗi
-            DatBanId: parseInt(datBanId) || 0,  // Đảm bảo là số
-            BookingDate: String($("#bookingDate").val()), // YYYY-MM-DD
+            Username: String(username),
+            DatBanId: parseInt(datBanId) || 0,
+            BookingDate: String($("#bookingDate").val()),
             TimeSlot: String($("#timeSlot").val()),
-            GuestCount: valGuestCount,          // Đã xử lý ở trên
-            BanPhongId: valBanPhongId,          // Đã xử lý ở trên
+            GuestCount: valGuestCount,
+            BanPhongId: valBanPhongId,
             Items: currentItems.map(i => ({
                 MonAnId: parseInt(i.monAnId) || 0,
                 SoLuong: parseInt(i.soLuong) || 1,
-                // Ép kiểu giá tiền cẩn thận
                 DonGia: parseFloat(i.donGia || i.Gia || 0)
             }))
         };
 
-        // [DEBUG] In ra console để bạn soi xem có field nào bị NaN không
-        console.log("Dữ liệu chuẩn bị gửi đi:", payload);
-
-        // 4. Gửi Ajax
         $.ajax({
             url: "/Account/UpdateBooking",
             type: "POST",
@@ -200,6 +232,7 @@ $(document).ready(function () {
                 if (res.success) {
                     showSuccess(res.message || "Thành công!");
                     setEditMode(false);
+                    // Cập nhật lại dữ liệu gốc để nếu bấm Hủy thì quay về trạng thái mới này
                     if (typeof originalItemsData !== 'undefined') {
                         originalItemsData = JSON.parse(JSON.stringify(currentItems));
                     }
@@ -208,24 +241,17 @@ $(document).ready(function () {
                 }
             },
             error: function (xhr) {
-                console.error("Lỗi 400 Chi tiết:", xhr.responseText);
-
                 let errorMsg = "Lỗi dữ liệu không hợp lệ (400).";
-
-                // Cố gắng moi móc lý do lỗi từ Server
                 if (xhr.responseJSON) {
-                    if (xhr.responseJSON.message) {
-                        errorMsg = xhr.responseJSON.message;
-                    } else if (xhr.responseJSON.errors) {
-                        // Lỗi validation mặc định của .NET (Ví dụ: GuestCount required)
+                    if (xhr.responseJSON.message) errorMsg = xhr.responseJSON.message;
+                    else if (xhr.responseJSON.errors) {
                         const errors = xhr.responseJSON.errors;
                         const firstField = Object.keys(errors)[0];
-                        errorMsg = `Lỗi tại trường [${firstField}]: ${errors[firstField][0]}`;
+                        errorMsg = `Lỗi: ${errors[firstField][0]}`;
                     }
                 }
-
                 showError(errorMsg);
-                alert(errorMsg); // Hiện popup cảnh báo
+                alert(errorMsg);
             },
             complete: function () {
                 $btnSave.prop("disabled", false).text("Lưu thay đổi");
@@ -237,10 +263,9 @@ $(document).ready(function () {
     function showSuccess(msg) {
         $successMsg.text(msg).slideDown();
         $errorMsg.slideUp();
+        $('html, body').animate({ scrollTop: $successMsg.offset().top - 100 }, 500);
+    }
 
-        $('html, body').animate({
-            scrollTop: $successMsg.offset().top - 100
-        }, 500); }
-
+    // Render lần đầu (chế độ Xem - nút bị disable)
     renderItems();
 });

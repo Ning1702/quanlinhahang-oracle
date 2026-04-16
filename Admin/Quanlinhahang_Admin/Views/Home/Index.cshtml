@@ -1,8 +1,164 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Trang quản trị nhà hàng";
+    Layout = null; /* Thêm dòng này nếu trang này đứng một mình không dùng Layout chung */
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+        /* 🌆 Nền nhà hàng */
+        body {
+            margin: 0;
+            height: 100vh;
+            /* Đổi đường dẫn ảnh nếu cần */
+            background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.55)), url('/images/bg-login.jpg') no-repeat center center/cover;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 🪟 Khung glassmorphism */
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px);
+            border-radius: 25px;
+            padding: 60px 80px;
+            text-align: center;
+            width: 600px;
+            color: #fff;
+            box-shadow: 0 8px 35px rgba(0, 0, 0, 0.55);
+            animation: fadeIn 1s ease-in-out;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ✨ Tiêu đề */
+        .dashboard-container h1 {
+            font-weight: 700;
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+            .dashboard-container h1 i {
+                color: #f5b97d;
+                margin-right: 8px;
+            }
+
+        .dashboard-container p {
+            font-size: 15px;
+            color: #f0f0f0;
+            margin-bottom: 40px;
+        }
+
+        /* 🍽️ Các nút chức năng */
+        .dashboard-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            justify-items: center;
+        }
+
+        .dashboard-btn {
+            width: 230px;
+            background: linear-gradient(145deg, #d9a25f, #c78a4a);
+            color: #fff;
+            border-radius: 15px;
+            padding: 22px 0;
+            font-size: 17px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35);
+            text-align: center;
+            display: block; /* Đảm bảo nút hiển thị khối */
+        }
+
+            .dashboard-btn i {
+                font-size: 26px;
+                display: block;
+                margin-bottom: 8px;
+            }
+
+            .dashboard-btn:hover {
+                background: linear-gradient(145deg, #e8b671, #d89b52);
+                transform: translateY(-3px);
+                box-shadow: 0 8px 25px rgba(233, 171, 83, 0.5);
+                color: #fff; /* Giữ màu chữ trắng khi hover */
+            }
+
+        /* 🔸 Nút đăng xuất */
+        .logout-btn {
+            position: fixed;
+            top: 25px;
+            right: 35px;
+            background: linear-gradient(145deg, #d9a25f, #c78a4a);
+            border: none;
+            color: white;
+            padding: 10px 22px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            text-decoration: none;
+        }
+
+            .logout-btn:hover {
+                background: linear-gradient(145deg, #e8b671, #d89b52);
+                transform: scale(1.05);
+                color: white;
+            }
+    </style>
+</head>
+<body>
+
+    <a asp-controller="Account" asp-action="Logout" class="logout-btn">
+        <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+    </a>
+
+    <div class="dashboard-container">
+        <h1><i class="fa-solid fa-utensils"></i> Trang quản trị nhà hàng</h1>
+        <p>Chọn chức năng bạn muốn quản lý:</p>
+
+        <div class="dashboard-buttons">
+            <a asp-controller="NhanViens" asp-action="Index" class="dashboard-btn">
+                <i class="fa-solid fa-user-tie"></i> Nhân viên
+            </a>
+
+            <a asp-controller="KhachHangs" asp-action="Index" class="dashboard-btn">
+                <i class="fa-solid fa-users"></i> Khách hàng
+            </a>
+
+            <a asp-controller="MonAns" asp-action="Index" class="dashboard-btn">
+                <i class="fa-solid fa-burger"></i> Menu món ăn
+            </a>
+
+            <a asp-controller="ThongKe" asp-action="Index" class="dashboard-btn">
+                <i class="fa-solid fa-chart-line"></i> Doanh số
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

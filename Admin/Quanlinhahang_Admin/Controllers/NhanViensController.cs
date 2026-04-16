@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quanlinhahang.Data.Models;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Quanlinhahang_Admin.Controllers
 {
@@ -17,9 +16,8 @@ namespace Quanlinhahang_Admin.Controllers
         // ================== INDEX ==================
         public async Task<IActionResult> Index(string? searchType, string? keyword)
         {
-            // [SỬA]: Nhanviens, Taikhoan
-            var query = _context.Nhanviens
-                .Include(n => n.Taikhoan)
+            var query = _context.NhanViens
+                .Include(n => n.TaiKhoan)
                 .AsQueryable();
 
             ViewBag.SearchType = searchType ?? "";
@@ -40,16 +38,14 @@ namespace Quanlinhahang_Admin.Controllers
                     case "id":
                         if (int.TryParse(keyword, out int idValue))
                         {
-                            // [SỬA]: Nhanvienid
-                            query = query.Where(x => x.Nhanvienid == idValue);
+                            query = query.Where(x => x.NhanVienId == idValue);
                             if (!query.Any()) ViewBag.NotFound = "Không tìm thấy nhân viên!";
                         }
                         else ViewBag.EmptyError = "ID phải là số!";
                         break;
 
                     case "phone":
-                        // [SỬA]: Sodienthoai
-                        query = query.Where(x => x.Sodienthoai != null && x.Sodienthoai.Contains(keyword));
+                        query = query.Where(x => x.SoDienThoai != null && x.SoDienThoai.Contains(keyword));
                         if (!query.Any()) ViewBag.NotFound = "Không tìm thấy nhân viên!";
                         break;
                 }
@@ -59,13 +55,12 @@ namespace Quanlinhahang_Admin.Controllers
         }
 
         // ================== CREATE (GET) ==================
-        // ================== CREATE (GET) ==================
         public IActionResult Create()
         {
-            // [Lưu ý]: Không cần tính NextID vì Oracle tự tăng, nhưng nếu muốn hiển thị thì ok
+            // Tự động tính ID tiếp theo để hiển thị (nếu cần)
             int nextId = 1;
-            if (_context.Nhanviens.Any())
-                nextId = _context.Nhanviens.Max(n => n.Nhanvienid) + 1;
+            if (_context.NhanViens.Any())
+                nextId = _context.NhanViens.Max(n => n.NhanVienId) + 1;
 
             ViewBag.NextID = nextId;
             return View();
@@ -73,47 +68,47 @@ namespace Quanlinhahang_Admin.Controllers
 
         // ================== CREATE (POST) ==================
         [HttpPost]
-        public async Task<IActionResult> Create(Nhanvien nv, string TenDangNhap, string MatKhau, string VaiTro)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(NhanVien nv, string TenDangNhap, string MatKhau, string VaiTro)
         {
-            if (await _context.Nhanviens.AnyAsync(x => x.Sodienthoai == nv.Sodienthoai))
+            if (await _context.NhanViens.AnyAsync(x => x.SoDienThoai == nv.SoDienThoai))
             {
                 ViewBag.PhoneError = "Số điện thoại đã tồn tại!";
                 return View(nv);
             }
 
-            if (await _context.Taikhoans.AnyAsync(t => t.Tendangnhap == TenDangNhap))
+            if (await _context.TaiKhoans.AnyAsync(t => t.TenDangNhap == TenDangNhap))
             {
                 ViewBag.UsernameError = "Tên đăng nhập đã tồn tại!";
                 return View(nv);
             }
 
-            var acc = new Taikhoan
+            var acc = new TaiKhoan
             {
-                Tendangnhap = TenDangNhap,
-                Matkhauhash = MatKhau,
+                TenDangNhap = TenDangNhap,
+                MatKhauHash = MatKhau,
                 Email = $"{TenDangNhap}@quanlynhahang.vn",
-                Vaitro = (VaiTro == "Admin") ? VaiTroHeThong.Admin : VaiTroHeThong.Staff,
-                Trangthai = "Hoạt động"
+                VaiTro = (VaiTro == "Admin") ? "Admin" : "Staff",
+                TrangThai = "Hoạt động" // Cột này vẫn nằm trong bảng TaiKhoan
             };
 
-            _context.Taikhoans.Add(acc);
+            _context.TaiKhoans.Add(acc);
             await _context.SaveChangesAsync();
 
-            nv.Taikhoanid = acc.Taikhoanid;
-            _context.Nhanviens.Add(nv);
+            nv.TaiKhoanId = acc.TaiKhoanId;
+            _context.NhanViens.Add(nv);
             await _context.SaveChangesAsync();
 
             TempData["msg"] = "Thêm nhân viên thành công!";
             return RedirectToAction(nameof(Index));
         }
 
-
         // ================== EDIT (GET) ==================
         public async Task<IActionResult> Edit(int id, string? returnUrl)
         {
-            var nv = await _context.Nhanviens
-                .Include(x => x.Taikhoan)
-                .FirstOrDefaultAsync(x => x.Nhanvienid == id);
+            var nv = await _context.NhanViens
+                .Include(x => x.TaiKhoan)
+                .FirstOrDefaultAsync(x => x.NhanVienId == id);
 
             if (nv == null) return NotFound();
 
@@ -121,38 +116,41 @@ namespace Quanlinhahang_Admin.Controllers
             return View(nv);
         }
 
-        public async Task<IActionResult> Edit(int id, Nhanvien nv, string TenDangNhap, string MatKhau, string VaiTro, string? returnUrl)
+        // ================== EDIT (POST) ==================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, NhanVien nv, string TenDangNhap, string MatKhau, string VaiTro, string? returnUrl)
         {
-            if (id != nv.Nhanvienid) return NotFound();
+            if (id != nv.NhanVienId) return NotFound();
 
-            var existingNV = await _context.Nhanviens.Include(n => n.Taikhoan).FirstOrDefaultAsync(n => n.Nhanvienid == id);
+            var existingNV = await _context.NhanViens.Include(n => n.TaiKhoan).FirstOrDefaultAsync(n => n.NhanVienId == id);
             if (existingNV == null) return NotFound();
 
-            if (await _context.Nhanviens.AnyAsync(x => x.Sodienthoai == nv.Sodienthoai && x.Nhanvienid != id))
+            if (await _context.NhanViens.AnyAsync(x => x.SoDienThoai == nv.SoDienThoai && x.NhanVienId != id))
             {
                 ViewBag.PhoneError = "Số điện thoại đã tồn tại!";
                 return View(nv);
             }
 
-            existingNV.Hoten = nv.Hoten;
-            existingNV.Sodienthoai = nv.Sodienthoai;
-            existingNV.Chucvu = nv.Chucvu;
-            existingNV.Ngayvaolam = nv.Ngayvaolam;
-            existingNV.Trangthai = nv.Trangthai;
-            if (existingNV.Taikhoan != null)
+            existingNV.HoTen = nv.HoTen;
+            existingNV.SoDienThoai = nv.SoDienThoai;
+            existingNV.ChucVu = nv.ChucVu;
+            // LƯU Ý: Đã xóa 2 dòng NgayVaoLam và TrangThai vì bảng NhanVien mới không có 2 cột này
+
+            if (existingNV.TaiKhoan != null)
             {
-                if (existingNV.Taikhoan.Tendangnhap != TenDangNhap)
+                if (existingNV.TaiKhoan.TenDangNhap != TenDangNhap)
                 {
-                    if (await _context.Taikhoans.AnyAsync(t => t.Tendangnhap == TenDangNhap))
+                    if (await _context.TaiKhoans.AnyAsync(t => t.TenDangNhap == TenDangNhap))
                     {
                         ViewBag.UsernameError = "Tên đăng nhập đã tồn tại!";
                         return View(nv);
                     }
-                    existingNV.Taikhoan.Tendangnhap = TenDangNhap;
+                    existingNV.TaiKhoan.TenDangNhap = TenDangNhap;
                 }
 
-                existingNV.Taikhoan.Matkhauhash = MatKhau;
-                existingNV.Taikhoan.Vaitro = (VaiTro == "Admin") ? VaiTroHeThong.Admin : VaiTroHeThong.Staff;
+                existingNV.TaiKhoan.MatKhauHash = MatKhau;
+                existingNV.TaiKhoan.VaiTro = (VaiTro == "Admin") ? "Admin" : "Staff";
             }
 
             await _context.SaveChangesAsync();
@@ -161,19 +159,24 @@ namespace Quanlinhahang_Admin.Controllers
             if (!string.IsNullOrEmpty(returnUrl)) return Redirect(returnUrl);
             return RedirectToAction(nameof(Index));
         }
-     
 
         // ================== DELETE ==================
         [HttpPost]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var nv = await _context.Nhanviens.FindAsync(id);
+            var nv = await _context.NhanViens.FindAsync(id);
             if (nv == null) return NotFound();
 
-            _context.Nhanviens.Remove(nv);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Đã xóa nhân viên!" });
+            try
+            {
+                _context.NhanViens.Remove(nv);
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Đã xóa nhân viên!" });
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
     }
 }

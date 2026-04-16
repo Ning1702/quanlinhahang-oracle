@@ -18,6 +18,6 @@ namespace Quanlinhahang_Customer.Models.ViewModels
         public List<CartItem>? Items { get; set; }
 
         // [ORACLE FIX]: Sửa BanPhong -> Banphong
-        public List<Banphong> DanhSachBan { get; set; } = new List<Banphong>();
+        public List<BanPhong> DanhSachBan { get; set; } = new List<BanPhong>();
     }
 }

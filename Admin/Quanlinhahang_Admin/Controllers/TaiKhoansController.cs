@@ -19,9 +19,10 @@ namespace Quanlinhahang_Admin.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var data = await _context.Taikhoans
-                .Where(t => t.Vaitro != VaiTroHeThong.Customer)
-                .OrderBy(t => t.Vaitro)
+            var data = await _context.TaiKhoans
+                // Đã sửa: So sánh trực tiếp với chuỗi "Customer" thay vì Enum
+                .Where(t => t.VaiTro != "Customer")
+                .OrderBy(t => t.VaiTro)
                 .ToListAsync();
 
             return View(data);
@@ -31,17 +32,17 @@ namespace Quanlinhahang_Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Taikhoan model, string MatKhau)
+        public async Task<IActionResult> Create(TaiKhoan model, string MatKhau)
         {
-            if (await _context.Taikhoans.AnyAsync(t => t.Tendangnhap == model.Tendangnhap))
+            if (await _context.TaiKhoans.AnyAsync(t => t.TenDangNhap == model.TenDangNhap))
             {
-                ModelState.AddModelError("Tendangnhap", "Tên đăng nhập đã tồn tại");
+                ModelState.AddModelError("TenDangNhap", "Tên đăng nhập đã tồn tại");
                 return View(model);
             }
 
-            model.Matkhauhash = HashPassword(MatKhau);
+            model.MatKhauHash = HashPassword(MatKhau);
 
-            model.Trangthai = "Hoạt động";
+            model.TrangThai = "Hoạt động";
 
             _context.Add(model);
             await _context.SaveChangesAsync();
@@ -50,27 +51,27 @@ namespace Quanlinhahang_Admin.Controllers
 
         public async Task<IActionResult> Edit(int id)
         {
-            var tk = await _context.Taikhoans.FindAsync(id);
+            var tk = await _context.TaiKhoans.FindAsync(id);
             if (tk == null) return NotFound();
             return View(tk);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Taikhoan model, string? NewPassword)
+        public async Task<IActionResult> Edit(int id, TaiKhoan model, string? NewPassword)
         {
-            if (id != model.Taikhoanid) return NotFound();
+            if (id != model.TaiKhoanId) return NotFound();
 
-            var tk = await _context.Taikhoans.FindAsync(id);
+            var tk = await _context.TaiKhoans.FindAsync(id);
             if (tk == null) return NotFound();
 
             tk.Email = model.Email;
-            tk.Vaitro = model.Vaitro; 
-            tk.Trangthai = model.Trangthai;
+            tk.VaiTro = model.VaiTro;
+            tk.TrangThai = model.TrangThai;
 
             if (!string.IsNullOrEmpty(NewPassword))
             {
-                tk.Matkhauhash = HashPassword(NewPassword);
+                tk.MatKhauHash = HashPassword(NewPassword);
             }
 
             await _context.SaveChangesAsync();
@@ -82,19 +83,17 @@ namespace Quanlinhahang_Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var tk = await _context.Taikhoans.FindAsync(id);
+            var tk = await _context.TaiKhoans.FindAsync(id);
             if (tk == null) return NotFound();
 
-            var nv = await _context.Nhanviens.FirstOrDefaultAsync(n => n.Taikhoanid == id);
+            var nv = await _context.NhanViens.FirstOrDefaultAsync(n => n.TaiKhoanId == id);
             if (nv != null)
             {
-
-                TempData["error"] = $"Tài khoản đang gắn với nhân viên {nv.Hoten}. Hãy xóa nhân viên trước!";
+                TempData["error"] = $"Tài khoản đang gắn với nhân viên {nv.HoTen}. Hãy xóa nhân viên trước!";
                 return RedirectToAction(nameof(Index));
-
             }
 
-            _context.Taikhoans.Remove(tk);
+            _context.TaiKhoans.Remove(tk);
             await _context.SaveChangesAsync();
 
             TempData["msg"] = "Xóa tài khoản thành công!";

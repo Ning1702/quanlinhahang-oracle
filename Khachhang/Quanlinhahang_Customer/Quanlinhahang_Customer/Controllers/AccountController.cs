@@ -27,11 +27,9 @@ namespace Quanlinhahang_Customer.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
 
-            // Fix CS8602: Thêm ?? "" để tránh null
             string usernameInput = (model.Username ?? "").ToUpper();
 
-            // Fix CS8602: Kiểm tra null trong DB
-            if (await _context.Taikhoans.AnyAsync(t => (t.Tendangnhap ?? "").ToUpper() == usernameInput))
+            if (await _context.TaiKhoans.AnyAsync(t => (t.TenDangNhap ?? "").ToUpper() == usernameInput))
                 return Conflict(new { success = false, message = "Tên đăng nhập này đã được sử dụng." });
 
             var hashedPassword = HashPassword(model.Password);
@@ -40,31 +38,31 @@ namespace Quanlinhahang_Customer.Controllers
             {
                 try
                 {
-                    // Fix CS8601: Đảm bảo không gán null vào trường bắt buộc
-                    var taiKhoan = new Taikhoan
+                    var taiKhoan = new TaiKhoan
                     {
-                        Tendangnhap = model.Username ?? "",
-                        Matkhauhash = hashedPassword,
+                        TenDangNhap = model.Username ?? "",
+                        MatKhauHash = hashedPassword,
                         Email = model.Email ?? "",
-                        Vaitro = VaiTroHeThong.Customer,
-                        Trangthai = "Hoạt động"
+                        VaiTro = VaiTroHeThong.Customer.ToString(),
+                        TrangThai = "Hoạt động"
                     };
-                    _context.Taikhoans.Add(taiKhoan);
+                    _context.TaiKhoans.Add(taiKhoan);
                     await _context.SaveChangesAsync();
 
-                    var khachHang = new Khachhang
+                    var khachHang = new KhachHang
                     {
-                        Hoten = model.FullName ?? "Khách hàng",
+                        HoTen = model.FullName ?? "Khách hàng",
                         Email = model.Email ?? "",
-                        Sodienthoai = model.Phone ?? "",
-                        Diachi = model.Address ?? "",
-                        Diemtichluy = 0,
-                        Taikhoanid = (int)taiKhoan.Taikhoanid,
-                        Ngaytao = DateTime.Now,
-                        Trangthai = "Hoạt động"
+                        SoDienThoai = model.Phone ?? "",
+                        DiaChi = model.Address ?? "",
+                        DiemTichLuy = 0,
+                        TaiKhoanId = taiKhoan.TaiKhoanId,
+                        NgayTao = DateTime.Now
+                        // Đã xóa KhachHang.TrangThai vì SQL mới không có cột này
                     };
-                    _context.Khachhangs.Add(khachHang);
+                    _context.KhachHangs.Add(khachHang);
                     await _context.SaveChangesAsync();
+
                     await transaction.CommitAsync();
                     return Json(new { success = true, message = "Đăng ký thành công! Vui lòng đăng nhập." });
                 }
@@ -84,40 +82,40 @@ namespace Quanlinhahang_Customer.Controllers
 
             string input = model.Username.Trim().ToUpper();
 
-            var taiKhoan = await _context.Taikhoans
-                .FirstOrDefaultAsync(t => (t.Tendangnhap ?? "").ToUpper() == input
+            var taiKhoan = await _context.TaiKhoans
+                .FirstOrDefaultAsync(t => (t.TenDangNhap ?? "").ToUpper() == input
                                           || (t.Email != null && t.Email.ToUpper() == input));
 
             if (taiKhoan == null)
             {
-                var khachHang = await _context.Khachhangs
-                    .Include(k => k.Taikhoan)
-                    .FirstOrDefaultAsync(k => k.Sodienthoai == input && k.Taikhoanid != null);
+                var khachHang = await _context.KhachHangs
+                    .Include(k => k.TaiKhoan)
+                    .FirstOrDefaultAsync(k => k.SoDienThoai == input && k.TaiKhoanId != null);
 
-                if (khachHang != null && khachHang.Taikhoan != null)
+                if (khachHang != null && khachHang.TaiKhoan != null)
                 {
-                    taiKhoan = khachHang.Taikhoan;
+                    taiKhoan = khachHang.TaiKhoan;
                 }
             }
 
-            if (taiKhoan == null || taiKhoan.Matkhauhash != HashPassword(model.Password) || taiKhoan.Trangthai != "Hoạt động")
+            if (taiKhoan == null || taiKhoan.MatKhauHash != HashPassword(model.Password) || taiKhoan.TrangThai != "Hoạt động")
             {
                 return Unauthorized(new { success = false, message = "Tài khoản hoặc mật khẩu không đúng." });
             }
 
-            string fullName = taiKhoan.Tendangnhap ?? "User";
-            if (taiKhoan.Vaitro == VaiTroHeThong.Customer)
+            string fullName = taiKhoan.TenDangNhap ?? "User";
+            if (taiKhoan.VaiTro == VaiTroHeThong.Customer.ToString())
             {
-                var kh = await _context.Khachhangs.FirstOrDefaultAsync(k => k.Taikhoanid == taiKhoan.Taikhoanid);
-                if (kh != null) fullName = kh.Hoten ?? fullName;
+                var kh = await _context.KhachHangs.FirstOrDefaultAsync(k => k.TaiKhoanId == taiKhoan.TaiKhoanId);
+                if (kh != null) fullName = kh.HoTen ?? fullName;
             }
             else
             {
-                var nv = await _context.Nhanviens.FirstOrDefaultAsync(n => n.Taikhoanid == taiKhoan.Taikhoanid);
-                if (nv != null) fullName = nv.Hoten ?? fullName;
+                var nv = await _context.NhanViens.FirstOrDefaultAsync(n => n.TaiKhoanId == taiKhoan.TaiKhoanId);
+                if (nv != null) fullName = nv.HoTen ?? fullName;
             }
 
-            return Json(new { success = true, user = new { username = taiKhoan.Tendangnhap, fullName, role = taiKhoan.Vaitro.ToString() } });
+            return Json(new { success = true, user = new { username = taiKhoan.TenDangNhap, fullName, role = taiKhoan.VaiTro.ToString() } });
         }
 
         [HttpPost("CheckUsername")]
@@ -126,8 +124,8 @@ namespace Quanlinhahang_Customer.Controllers
             if (string.IsNullOrWhiteSpace(model.Username)) return BadRequest(new { success = false });
             string usernameInput = model.Username.ToUpper();
 
-            var exists = await _context.Taikhoans.AnyAsync(t => (t.Tendangnhap ?? "").ToUpper() == usernameInput || (t.Email != null && t.Email.ToUpper() == usernameInput));
-            if (!exists) exists = await _context.Khachhangs.AnyAsync(k => k.Sodienthoai == model.Username);
+            var exists = await _context.TaiKhoans.AnyAsync(t => (t.TenDangNhap ?? "").ToUpper() == usernameInput || (t.Email != null && t.Email.ToUpper() == usernameInput));
+            if (!exists) exists = await _context.KhachHangs.AnyAsync(k => k.SoDienThoai == model.Username);
 
             if (!exists) return Json(new { success = false, message = "Tài khoản không tồn tại." });
             return Json(new { success = true });
@@ -139,16 +137,16 @@ namespace Quanlinhahang_Customer.Controllers
             if (!ModelState.IsValid) return BadRequest(new { success = false });
             string usernameInput = (model.Username ?? "").ToUpper();
 
-            var taiKhoan = await _context.Taikhoans.FirstOrDefaultAsync(t => (t.Tendangnhap ?? "").ToUpper() == usernameInput || (t.Email != null && t.Email.ToUpper() == usernameInput));
+            var taiKhoan = await _context.TaiKhoans.FirstOrDefaultAsync(t => (t.TenDangNhap ?? "").ToUpper() == usernameInput || (t.Email != null && t.Email.ToUpper() == usernameInput));
             if (taiKhoan == null)
             {
-                var khachHang = await _context.Khachhangs.Include(k => k.Taikhoan).FirstOrDefaultAsync(k => k.Sodienthoai == model.Username);
-                if (khachHang != null) taiKhoan = khachHang.Taikhoan;
+                var khachHang = await _context.KhachHangs.Include(k => k.TaiKhoan).FirstOrDefaultAsync(k => k.SoDienThoai == model.Username);
+                if (khachHang != null) taiKhoan = khachHang.TaiKhoan;
             }
 
             if (taiKhoan == null) return NotFound(new { success = false, message = "Không tìm thấy tài khoản." });
 
-            taiKhoan.Matkhauhash = HashPassword(model.NewPassword);
+            taiKhoan.MatKhauHash = HashPassword(model.NewPassword);
             await _context.SaveChangesAsync();
             return Json(new { success = true, message = "Đổi mật khẩu thành công!" });
         }
@@ -158,63 +156,64 @@ namespace Quanlinhahang_Customer.Controllers
         {
             if (string.IsNullOrEmpty(username)) return BadRequest(new { success = false });
 
-            // Fix CS8602: Thêm check k.Taikhoan != null
-            var khachHang = await _context.Khachhangs.Include(k => k.Taikhoan)
-                .FirstOrDefaultAsync(k => k.Taikhoan != null && (k.Taikhoan.Tendangnhap ?? "").ToUpper() == username.ToUpper());
+            var khachHang = await _context.KhachHangs.Include(k => k.TaiKhoan)
+                .FirstOrDefaultAsync(k => k.TaiKhoan != null && (k.TaiKhoan.TenDangNhap ?? "").ToUpper() == username.ToUpper());
 
             if (khachHang == null)
             {
-                var nhanVien = await _context.Nhanviens.Include(n => n.Taikhoan)
-                    .FirstOrDefaultAsync(n => n.Taikhoan != null && (n.Taikhoan.Tendangnhap ?? "").ToUpper() == username.ToUpper());
-                if (nhanVien != null) return Json(new { fullName = nhanVien.Hoten, email = nhanVien.Taikhoan?.Email, phone = nhanVien.Sodienthoai, address = "N/A" });
+                var nhanVien = await _context.NhanViens.Include(n => n.TaiKhoan)
+                    .FirstOrDefaultAsync(n => n.TaiKhoan != null && (n.TaiKhoan.TenDangNhap ?? "").ToUpper() == username.ToUpper());
+                if (nhanVien != null) return Json(new { fullName = nhanVien.HoTen, email = nhanVien.TaiKhoan?.Email, phone = nhanVien.SoDienThoai, address = "N/A" });
                 return NotFound(new { success = false, message = "Không tìm thấy thông tin." });
             }
-            return Json(new { fullName = khachHang.Hoten, email = khachHang.Email, phone = khachHang.Sodienthoai, address = khachHang.Diachi });
+            return Json(new { fullName = khachHang.HoTen, email = khachHang.Email, phone = khachHang.SoDienThoai, address = khachHang.DiaChi });
         }
 
         [HttpPost("UpdateUserInfo")]
         public async Task<IActionResult> UpdateUserInfo([FromBody] UpdateInfoViewModel model)
         {
             if (!ModelState.IsValid) return BadRequest(new { success = false });
-            // Fix CS8602
-            var khachHang = await _context.Khachhangs.Include(k => k.Taikhoan)
-                .FirstOrDefaultAsync(k => k.Taikhoan != null && (k.Taikhoan.Tendangnhap ?? "").ToUpper() == (model.Username ?? "").ToUpper());
+            var khachHang = await _context.KhachHangs.Include(k => k.TaiKhoan)
+                .FirstOrDefaultAsync(k => k.TaiKhoan != null && (k.TaiKhoan.TenDangNhap ?? "").ToUpper() == (model.Username ?? "").ToUpper());
 
             if (khachHang == null) return NotFound(new { success = false });
-            var taiKhoan = khachHang.Taikhoan;
+            var taiKhoan = khachHang.TaiKhoan;
 
-            // Check thêm cho chắc chắn
             if (taiKhoan == null) return NotFound(new { success = false });
 
-            if (taiKhoan.Tendangnhap != model.Phone)
+            if (taiKhoan.TenDangNhap != model.Phone)
             {
-                if (await _context.Taikhoans.AnyAsync(t => (t.Tendangnhap ?? "").ToUpper() == (model.Phone ?? "").ToUpper()))
+                if (await _context.TaiKhoans.AnyAsync(t => (t.TenDangNhap ?? "").ToUpper() == (model.Phone ?? "").ToUpper()))
                     return Conflict(new { success = false, message = "Số điện thoại mới đã tồn tại." });
-                taiKhoan.Tendangnhap = model.Phone;
+                taiKhoan.TenDangNhap = model.Phone;
             }
-            khachHang.Hoten = model.FullName;
+            khachHang.HoTen = model.FullName;
             khachHang.Email = model.Email;
-            khachHang.Sodienthoai = model.Phone;
-            khachHang.Diachi = model.Address;
+            khachHang.SoDienThoai = model.Phone;
+            khachHang.DiaChi = model.Address;
             if (taiKhoan.Email != model.Email) taiKhoan.Email = model.Email;
+
             await _context.SaveChangesAsync();
-            return Json(new { success = true, message = "Cập nhật thành công!", newFullName = khachHang.Hoten, newUsername = taiKhoan.Tendangnhap });
+            return Json(new { success = true, message = "Cập nhật thành công!", newFullName = khachHang.HoTen, newUsername = taiKhoan.TenDangNhap });
         }
 
         [HttpGet("GetHistoryData")]
         public async Task<IActionResult> GetHistoryData([FromQuery] string username, [FromQuery] string status)
         {
             if (string.IsNullOrEmpty(username)) return BadRequest(new { success = false });
-            var taiKhoan = await _context.Taikhoans.FirstOrDefaultAsync(t => (t.Tendangnhap ?? "").ToUpper() == username.ToUpper());
+            var taiKhoan = await _context.TaiKhoans.FirstOrDefaultAsync(t => (t.TenDangNhap ?? "").ToUpper() == username.ToUpper());
             if (taiKhoan == null) return NotFound(new { success = false });
 
-            IQueryable<Datban> query = _context.Datbans
-                .Include(d => d.Banphong).Include(d => d.Khachhang).Include(d => d.Hoadons).ThenInclude(h => h.Trangthai);
+            // SỬA: Đổi Hoadons thành HoaDon, bao gồm TrangThai của DatBan (nếu EF map là TrangThaiDatBan thì bạn đổi tên theo EF nhé)
+            IQueryable<DatBan> query = _context.DatBans
+                .Include(d => d.BanPhong)
+                .Include(d => d.KhachHang)
+                .Include(d => d.HoaDon).ThenInclude(h => h.TrangThai);
 
-            if (taiKhoan.Vaitro == VaiTroHeThong.Customer)
+            if (taiKhoan.VaiTro == VaiTroHeThong.Customer.ToString())
             {
-                var khachHang = await _context.Khachhangs.FirstOrDefaultAsync(k => k.Taikhoanid == taiKhoan.Taikhoanid);
-                if (khachHang != null) query = query.Where(d => d.Khachhangid == khachHang.Khachhangid);
+                var khachHang = await _context.KhachHangs.FirstOrDefaultAsync(k => k.TaiKhoanId == taiKhoan.TaiKhoanId);
+                if (khachHang != null) query = query.Where(d => d.KhachHangId == khachHang.KhachHangId);
             }
 
             int? trangThaiId = null;
@@ -230,24 +229,26 @@ namespace Quanlinhahang_Customer.Controllers
                 case "đã hủy": filterHuy = true; trangThaiId = 5; break;
             }
 
-            // Fix CS8629: Dùng .GetValueOrDefault() hoặc ?? 0 thay vì .Value trực tiếp
+            // Lọc theo TrangThaiId (SQL mới là INT)
             if (filterHuy)
-                query = query.Where(d => (d.Trangthai ?? "").ToLower() == "đã hủy" || d.Hoadons.Any(h => h.Trangthaiid == (trangThaiId ?? 5)));
+                query = query.Where(d => d.TrangThaiId == 5 || (d.HoaDon != null && d.HoaDon.TrangThaiId == (trangThaiId ?? 5)));
             else if (trangThaiId.HasValue)
-                query = query.Where(d => d.Hoadons.Any(h => h.Trangthaiid == trangThaiId.GetValueOrDefault()));
+                query = query.Where(d => d.HoaDon != null && d.HoaDon.TrangThaiId == trangThaiId.GetValueOrDefault());
             else if (filterCho)
-                query = query.Where(d => (d.Trangthai ?? "").ToLower() == "chờ xác nhận");
+                query = query.Where(d => d.TrangThaiId == 1); // 1 = Chờ xác nhận
 
-            var list = await query.OrderByDescending(d => d.Ngayden)
+            // Chú ý d.TrangThai.TenTrangThai có thể null nếu bạn chưa include bảng TrangThaiDatBan
+            var list = await query.OrderByDescending(d => d.NgayDen)
                 .Select(d => new {
-                    datBanId = d.Datbanid,
-                    ngayDen = d.Ngayden.ToString("dd/MM/yyyy"),
-                    tenKhachHang = d.Khachhang != null ? d.Khachhang.Hoten : "Ẩn danh",
-                    tenBanPhong = d.Banphong != null ? d.Banphong.Tenbanphong : "N/A",
-                    soNguoi = d.Songuoi,
-                    trangThaiDatBan = d.Trangthai,
-                    trangThaiHoaDon = d.Hoadons.OrderByDescending(h => h.Ngaylap).Select(h => h.Trangthai.Tentrangthai).FirstOrDefault()
+                    datBanId = d.DatBanId,
+                    ngayDen = d.NgayDen.HasValue ? d.NgayDen.Value.ToString("dd/MM/yyyy") : "",
+                    tenKhachHang = d.KhachHang != null ? d.KhachHang.HoTen : "Ẩn danh",
+                    tenBanPhong = d.BanPhong != null ? d.BanPhong.TenBanPhong : "N/A",
+                    soNguoi = d.SoNguoi,
+                    trangThaiDatBan = (d.TrangThaiId == 1) ? "Chờ xác nhận" : ((d.TrangThaiId == 5) ? "Đã hủy" : "Đã xử lý"),
+                    trangThaiHoaDon = d.HoaDon != null ? d.HoaDon.TrangThai.TenTrangThai : null
                 }).ToListAsync();
+
             return Json(new { success = true, list });
         }
 
@@ -255,17 +256,15 @@ namespace Quanlinhahang_Customer.Controllers
         public async Task<IActionResult> GetUserVouchers([FromQuery] string username)
         {
             if (string.IsNullOrEmpty(username)) return BadRequest(new { success = false });
-            var taiKhoan = await _context.Taikhoans.FirstOrDefaultAsync(t => (t.Tendangnhap ?? "").ToUpper() == username.ToUpper());
+            var taiKhoan = await _context.TaiKhoans.FirstOrDefaultAsync(t => (t.TenDangNhap ?? "").ToUpper() == username.ToUpper());
             if (taiKhoan == null) return NotFound(new { success = false, message = "Tài khoản lỗi." });
 
-            var khachHang = await _context.Khachhangs.Include(k => k.Hangthanhvien).FirstOrDefaultAsync(k => k.Taikhoanid == taiKhoan.Taikhoanid);
+            var khachHang = await _context.KhachHangs.Include(k => k.HangThanhVien).FirstOrDefaultAsync(k => k.TaiKhoanId == taiKhoan.TaiKhoanId);
             if (khachHang == null) return NotFound(new { success = false, message = "Không tìm thấy thông tin khách hàng." });
 
-            string hangThanhVien = khachHang.Hangthanhvien?.Tenhang ?? "Thường";
+            string hangThanhVien = khachHang.HangThanhVien?.TenHang ?? "Thường";
 
-            // Fix CS0019: Bỏ ?? 0 vì Diemtichluy là int (không null). 
-            // Dùng Convert.ToInt32 để an toàn tuyệt đối.
-            int diem = Convert.ToInt32(khachHang.Diemtichluy);
+            int diem = Convert.ToInt32(khachHang.DiemTichLuy);
 
             var vouchers = new List<object>();
             string ex30 = DateTime.Now.AddDays(30).ToString("dd/MM/yyyy");
@@ -282,13 +281,13 @@ namespace Quanlinhahang_Customer.Controllers
         private async Task<int> ResolveKhungGioId(string? timeSlot)
         {
             string key = (timeSlot ?? "").Trim().ToLower();
-            if (key.Contains("trua") || key.Contains("trưa")) key = "trưa"; 
-            else if (key.Contains("toi") || key.Contains("tối")) key = "tối"; 
+            if (key.Contains("trua") || key.Contains("trưa")) key = "trưa";
+            else if (key.Contains("toi") || key.Contains("tối")) key = "tối";
             else return 0;
 
-            var khungGio = await _context.Khunggios.FirstOrDefaultAsync(k => k.Tenkhunggio.ToLower() == key);
+            var khungGio = await _context.KhungGios.FirstOrDefaultAsync(k => k.TenKhungGio.ToLower() == key);
 
-            return khungGio != null ? (int)khungGio.Khunggioid : 0;
+            return khungGio != null ? (int)khungGio.KhungGioId : 0;
         }
 
         private string HashPassword(string password)
@@ -299,44 +298,41 @@ namespace Quanlinhahang_Customer.Controllers
         [HttpGet("HistoryDetail/{datBanId}")]
         public async Task<IActionResult> HistoryDetail(int datBanId)
         {
-            var datBan = await _context.Datbans
-                .Include(d => d.Khunggio).Include(d => d.Banphong).Include(d => d.Khachhang)
-                .Include(d => d.Hoadons).ThenInclude(h => h.Trangthai)
-                .Include(d => d.Hoadons).ThenInclude(h => h.Chitiethoadons).ThenInclude(ct => ct.Monan)
-                .FirstOrDefaultAsync(d => d.Datbanid == datBanId);
+            var datBan = await _context.DatBans
+                .Include(d => d.KhungGio)
+                .Include(d => d.BanPhong)
+                .Include(d => d.KhachHang)
+                .Include(d => d.HoaDon).ThenInclude(h => h.TrangThai)
+                .Include(d => d.HoaDon).ThenInclude(h => h.ChiTietHoaDons).ThenInclude(ct => ct.MonAn)
+                .FirstOrDefaultAsync(d => d.DatBanId == datBanId);
 
             if (datBan == null) return NotFound("Không tìm thấy đơn đặt bàn.");
 
-            ViewBag.DanhSachBan = await _context.Banphongs.Include(b => b.Loaibanphong).OrderBy(b => b.Banphongid).ToListAsync();
-            ViewBag.DanhSachMonAn = await _context.Monans.Where(m => m.Trangthai == "Còn bán").Include(m => m.Danhmuc).OrderBy(m => m.Danhmucid).ToListAsync();
+            ViewBag.DanhSachBan = await _context.BanPhongs.Include(b => b.LoaiBanPhong).OrderBy(b => b.BanPhongId).ToListAsync();
+            ViewBag.DanhSachMonAn = await _context.MonAns.Where(m => m.TrangThai == "Còn bán").Include(m => m.DanhMuc).OrderBy(m => m.DanhMucId).ToListAsync();
             return View(datBan);
         }
 
         [HttpPost("UpdateBooking")]
         public async Task<IActionResult> UpdateBooking([FromBody] UpdateBookingViewModel model)
         {
-            if (model == null)
-            {
-                return BadRequest(new { success = false, message = "Lỗi: Server không đọc được dữ liệu gửi lên (JSON Null)." });
-            }
+            if (model == null) return BadRequest(new { success = false, message = "Lỗi: Server không đọc được dữ liệu gửi lên (JSON Null)." });
 
             if (!ModelState.IsValid)
             {
-                var errors = string.Join("; ", ModelState.Values
-                                            .SelectMany(x => x.Errors)
-                                            .Select(x => x.ErrorMessage));
+                var errors = string.Join("; ", ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage));
                 return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ: " + errors });
             }
 
-            // 3. Logic xử lý chính (Giữ nguyên logic cũ)
-            var datBan = await _context.Datbans
-                .Include(d => d.Hoadons).ThenInclude(h => h.Chitiethoadons)
-                .FirstOrDefaultAsync(d => d.Datbanid == model.DatBanId);
+            var datBan = await _context.DatBans
+                .Include(d => d.HoaDon).ThenInclude(h => h.ChiTietHoaDons)
+                .FirstOrDefaultAsync(d => d.DatBanId == model.DatBanId);
 
             if (datBan == null) return NotFound(new { success = false, message = "Không tìm thấy đơn đặt bàn." });
 
-            var hoaDon = datBan.Hoadons.FirstOrDefault();
-            if ((datBan.Trangthai ?? "").ToLower() != "chờ xác nhận" && (hoaDon != null && hoaDon.Trangthaiid != 1))
+            var hoaDon = datBan.HoaDon;
+            // 1: Chờ xác nhận
+            if (datBan.TrangThaiId != 1 && (hoaDon != null && hoaDon.TrangThaiId != 1))
                 return BadRequest(new { success = false, message = "Không thể sửa đơn này do trạng thái không hợp lệ." });
 
             if (!DateOnly.TryParse(model.BookingDate, out DateOnly bookingDate))
@@ -345,26 +341,27 @@ namespace Quanlinhahang_Customer.Controllers
             int khungGioId = await ResolveKhungGioId(model.TimeSlot);
             if (khungGioId == 0) return BadRequest(new { success = false, message = "Khung giờ lỗi." });
 
-            if (model.BanPhongId.HasValue && model.BanPhongId != datBan.Banphongid)
+            if (model.BanPhongId.HasValue && model.BanPhongId != datBan.BanPhongId)
             {
-                var banMoi = await _context.Banphongs.FindAsync(model.BanPhongId.GetValueOrDefault());
-                if (banMoi == null || banMoi.Trangthai)
+                var banMoi = await _context.BanPhongs.FindAsync(model.BanPhongId.GetValueOrDefault());
+                // 0: Trống
+                if (banMoi == null || banMoi.TrangThaiId != 0)
                     return BadRequest(new { success = false, message = "Bàn đã chọn không còn trống." });
             }
 
-            // 4. Lưu dữ liệu
             using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    datBan.Ngayden = bookingDate.ToDateTime(TimeOnly.MinValue);
-                    datBan.Khunggioid = khungGioId;
-                    datBan.Songuoi = model.GuestCount;
-                    datBan.Banphongid = model.BanPhongId;
+                    datBan.NgayDen = bookingDate;
+                    datBan.KhungGioId = khungGioId;
+                    datBan.SoNguoi = model.GuestCount;
+                    datBan.BanPhongId = model.BanPhongId;
+                    // Đã xóa datBan.TongTienDuKien vì SQL mới không còn cột này
 
                     if (hoaDon != null)
                     {
-                        _context.Chitiethoadons.RemoveRange(hoaDon.Chitiethoadons);
+                        _context.ChiTietHoaDons.RemoveRange(hoaDon.ChiTietHoaDons);
                         await _context.SaveChangesAsync();
 
                         decimal newTotal = 0;
@@ -372,21 +369,18 @@ namespace Quanlinhahang_Customer.Controllers
                         {
                             foreach (var item in model.Items)
                             {
-                                var thanhTien = item.DonGia * item.SoLuong;
-                                _context.Chitiethoadons.Add(new Chitiethoadon
+                                _context.ChiTietHoaDons.Add(new ChiTietHoaDon
                                 {
-                                    Hoadonid = (int)hoaDon.Hoadonid,
-                                    Monanid = (int)item.MonAnId,
-                                    Soluong = item.SoLuong,
-                                    Dongia = (long)item.DonGia,
-                                    Thanhtien = (long)thanhTien
+                                    HoaDonId = hoaDon.HoaDonId,
+                                    MonAnId = item.MonAnId,
+                                    SoLuong = item.SoLuong,
+                                    DonGia = (decimal)item.DonGia
+                                    // Bỏ gán ThanhTien vì DB đã cấu hình AS (SoLuong * DonGia) PERSISTED
                                 });
-                                newTotal += thanhTien;
+                                newTotal += (decimal)(item.DonGia * item.SoLuong);
                             }
                         }
-                        hoaDon.Tongtien = (long)newTotal;
-                        hoaDon.Banphongid = model.BanPhongId;
-                        datBan.Tongtiendukien = (long?)newTotal;
+                        hoaDon.TongTien = newTotal;
                     }
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -403,25 +397,28 @@ namespace Quanlinhahang_Customer.Controllers
         [HttpPost("CancelBooking")]
         public async Task<IActionResult> CancelBooking([FromBody] CancelBookingRequest req)
         {
-            var taiKhoan = await _context.Taikhoans.FirstOrDefaultAsync(t => (t.Tendangnhap ?? "").ToUpper() == (req.Username ?? "").ToUpper());
+            var taiKhoan = await _context.TaiKhoans.FirstOrDefaultAsync(t => (t.TenDangNhap ?? "").ToUpper() == (req.Username ?? "").ToUpper());
             if (taiKhoan == null) return Unauthorized(new { success = false });
 
-            var khachHang = await _context.Khachhangs.FirstOrDefaultAsync(k => k.Taikhoanid == taiKhoan.Taikhoanid);
+            var khachHang = await _context.KhachHangs.FirstOrDefaultAsync(k => k.TaiKhoanId == taiKhoan.TaiKhoanId);
             if (khachHang == null) return Unauthorized(new { success = false });
 
-            var datBan = await _context.Datbans.Include(d => d.Hoadons).FirstOrDefaultAsync(d => d.Datbanid == req.DatBanId && d.Khachhangid == khachHang.Khachhangid);
+            var datBan = await _context.DatBans.Include(d => d.HoaDon).FirstOrDefaultAsync(d => d.DatBanId == req.DatBanId && d.KhachHangId == khachHang.KhachHangId);
             if (datBan == null) return NotFound(new { success = false });
 
-            if ((datBan.Trangthai ?? "").ToLower() != "chờ xác nhận") return BadRequest(new { success = false, message = "Không thể hủy." });
+            // 1: Chờ xác nhận
+            if (datBan.TrangThaiId != 1) return BadRequest(new { success = false, message = "Không thể hủy." });
 
-            datBan.Trangthai = "Đã hủy";
-            var hoaDon = datBan.Hoadons.FirstOrDefault();
+            datBan.TrangThaiId = 5; // 5: Đã hủy
+
+            var hoaDon = datBan.HoaDon;
             if (hoaDon != null)
             {
-                hoaDon.Trangthaiid = 5;
-                _context.Hoadons.Update(hoaDon);
+                hoaDon.TrangThaiId = 5;
+                _context.HoaDons.Update(hoaDon);
             }
-            _context.Datbans.Update(datBan);
+
+            _context.DatBans.Update(datBan);
             await _context.SaveChangesAsync();
             return Json(new { success = true, message = "Đã hủy đơn." });
         }

@@ -56,6 +56,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Setmonan", "Setmonan", "{89
 		SharedImages\Setmonan\set9.jpg = SharedImages\Setmonan\set9.jpg
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Logo", "Logo", "{0DD0A53F-A995-4122-941F-DB164007A2E2}"
+	ProjectSection(SolutionItems) = preProject
+		SharedImages\Logo\LogoChu.png = SharedImages\Logo\LogoChu.png
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +90,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{CDC60EB4-8C47-4D89-9DDC-E8868DA312ED} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{89D043CA-90DA-4259-8A3E-2657199FFA3F} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{0DD0A53F-A995-4122-941F-DB164007A2E2} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {24D31463-A824-41A4-B9F9-72025B7C386B}

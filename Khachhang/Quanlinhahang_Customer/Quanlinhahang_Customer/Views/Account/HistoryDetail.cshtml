@@ -1,30 +1,34 @@
-﻿@model Quanlinhahang.Data.Models.Datban
+﻿@model Quanlinhahang.Data.Models.DatBan
 @using Quanlinhahang.Data.Models
 @using System.Collections.Generic
 @using System.Linq
 
 @{
-    ViewData["Title"] = $"Chi tiết Đơn hàng #{Model.Datbanid}";
-    var hoaDon = Model.Hoadons.FirstOrDefault();
-    bool canEdit = (Model.Trangthai == "Chờ xác nhận" && (hoaDon == null || hoaDon.Trangthaiid == 1));
-    var danhSachBan = ViewBag.DanhSachBan as List<Banphong> ?? new List<Banphong>();
-    var danhSachMonAn = ViewBag.DanhSachMonAn as List<Monan> ?? new List<Monan>();
+    ViewData["Title"] = $"Chi tiết Đơn hàng #{Model.DatBanId}";
+
+    var hoaDon = Model.HoaDon;
+    // Logic mới: TrangThaiId == 1 (Chờ xác nhận)
+    bool canEdit = (Model.TrangThaiId == 1 && (hoaDon == null || hoaDon.TrangThaiId == 1));
+
+    var danhSachBan = ViewBag.DanhSachBan as List<BanPhong> ?? new List<BanPhong>();
+    var danhSachMonAn = ViewBag.DanhSachMonAn as List<MonAn> ?? new List<MonAn>();
+
     var danhSachDanhMuc = danhSachMonAn
-        .Where(m => m.Danhmuc != null)
-        .GroupBy(m => m.Danhmucid)
-        .Select(g => g.First().Danhmuc)
-        .OrderBy(d => d.Danhmucid)
+        .Where(m => m.DanhMuc != null)
+        .GroupBy(m => m.DanhMucId)
+        .Select(g => g.First().DanhMuc)
+        .OrderBy(d => d.DanhMucId)
         .ToList();
 
-    var itemsList = (hoaDon?.Chitiethoadons ?? new List<Chitiethoadon>());
+    var itemsList = (hoaDon?.ChiTietHoaDons ?? new List<ChiTietHoaDon>());
 
     var itemsToShow = itemsList.Select(ct => new
     {
-        monAnId = ct.Monanid,
-        tenMon = ct.Monan?.Tenmon,
-        soLuong = ct.Soluong,
-        donGia = ct.Dongia,
-        thanhTien = ct.Thanhtien
+        monAnId = ct.MonAnId,
+        tenMon = ct.MonAn?.TenMon,
+        soLuong = ct.SoLuong,
+        donGia = ct.DonGia,
+        thanhTien = ct.ThanhTien
     });
 }
 
@@ -38,7 +42,7 @@
 <div class="register-container">
     <div id="historyDetailPage">
 
-        <h2 class="history-title">Chi tiết Đơn hàng: #@Model.Datbanid</h2>
+        <h2 class="history-title">Chi tiết Đơn hàng: #@Model.DatBanId</h2>
 
         <form id="updateBookingForm" onsubmit="return false;">
             <div class="history-content">
@@ -51,36 +55,36 @@
                             <h3>Thông tin Đặt bàn</h3>
                             <div class="form-group">
                                 <label>Trạng thái</label>
-                                <input type="text" class="form-input" value="@(hoaDon?.Trangthai?.Tentrangthai ?? Model.Trangthai)" readonly />
+                                <input type="text" class="form-input" value="@(hoaDon?.TrangThai?.TenTrangThai ?? Model.TrangThai?.TenTrangThai ?? "Chưa xác định")" readonly />
                             </div>
                             <div class="form-group">
                                 <label>Ngày đến</label>
-                                <input type="date" id="bookingDate" class="form-input" value="@Model.Ngayden.ToString("yyyy-MM-dd")" required />
+                                <input type="date" id="bookingDate" class="form-input" value="@(Model.NgayDen?.ToString("yyyy-MM-dd"))" required />
                             </div>
                             <div class="form-group">
                                 <label>Khung giờ</label>
                                 <select id="timeSlot" class="form-select" required>
-                                    <option value="Trua" selected="@(Model.Khunggio?.Tenkhunggio == "Trưa")">Trưa (11:00 - 13:30)</option>
-                                    <option value="Toi" selected="@(Model.Khunggio?.Tenkhunggio == "Tối")">Tối (18:00 - 21:30)</option>
+                                    <option value="Trua" selected="@(Model.KhungGio?.TenKhungGio == "Trưa")">Trưa (11:00 - 13:30)</option>
+                                    <option value="Toi" selected="@(Model.KhungGio?.TenKhungGio == "Tối")">Tối (18:00 - 21:30)</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Số người</label>
-                                <input type="number" id="guestCount" class="form-input" value="@Model.Songuoi" min="1" required />
+                                <input type="number" id="guestCount" class="form-input" value="@Model.SoNguoi" min="1" required />
                             </div>
                             <div class="form-group">
                                 <label>Bàn/Phòng</label>
-                                <div class="selected-table-display" id="selectedTableDisplay">@(Model.Banphong?.Tenbanphong ?? "Chưa chọn bàn")</div>
+                                <div class="selected-table-display" id="selectedTableDisplay">@(Model.BanPhong?.TenBanPhong ?? "Chưa chọn bàn")</div>
                                 <button type="button" class="btn-select-table" id="openTableMapBtn">Thay đổi bàn</button>
-                                <input type="hidden" id="selectedBanPhongId" value="@Model.Banphongid" />
+                                <input type="hidden" id="selectedBanPhongId" value="@Model.BanPhongId" />
                             </div>
                         </div>
 
                         <div class="detail-box">
                             <h3>Thông tin Khách hàng</h3>
-                            <p><strong>Họ và tên:</strong> <span>@(Model.Khachhang?.Hoten ?? "N/A")</span></p>
-                            <p><strong>Số điện thoại:</strong> <span>@(Model.Khachhang?.Sodienthoai ?? "N/A")</span></p>
-                            <p><strong>Email:</strong> <span>@(Model.Khachhang?.Email ?? "N/A")</span></p>
+                            <p><strong>Họ và tên:</strong> <span>@(Model.KhachHang?.HoTen ?? "N/A")</span></p>
+                            <p><strong>Số điện thoại:</strong> <span>@(Model.KhachHang?.SoDienThoai ?? "N/A")</span></p>
+                            <p><strong>Email:</strong> <span>@(Model.KhachHang?.Email ?? "N/A")</span></p>
                         </div>
                     </div>
 
@@ -108,7 +112,7 @@
 
                         <div class="summary-total" style="border-top: 1px solid #444; padding-top: 15px;">
                             <span>Tổng cộng (Dự kiến):</span>
-                            <span class="total-amount" id="summaryTotal">@(hoaDon?.Tongtien.ToString("n0") ?? "0")đ</span>
+                            <span class="total-amount" id="summaryTotal">@(hoaDon?.TongTien?.ToString("n0") ?? "0")đ</span>
                         </div>
                     </div>
                 </fieldset>
@@ -149,20 +153,22 @@
             <div class="table-map-grid">
                 @foreach (var ban in danhSachBan)
                 {
-                    string trangThaiClass = (!ban.Trangthai) ? "trống" : "da-dat";
-                    bool isAvailable = !ban.Trangthai;
+                    // Logic mới: TrangThaiId == 0 là bàn trống
+                    bool isAvailable = (ban.TrangThaiId == 0);
+                    string trangThaiClass = isAvailable ? "trống" : "da-dat";
+
                     <div class="table-card @trangThaiClass"
-                         data-id="@ban.Banphongid"
-                         data-name="@ban.Tenbanphong"
+                         data-id="@ban.BanPhongId"
+                         data-name="@ban.TenBanPhong"
                          data-available="@isAvailable.ToString().ToLower()"
-                         title="@ban.Tenbanphong (@ban.Succhua ghế)">
+                         title="@ban.TenBanPhong (@ban.SucChua ghế)">
                         <div class="table-card-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                                 <path d="M4 18v3h3v-3h10v3h3v-6H4v3zm16-8h-2V7c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v3H4v6h16v-6z" />
                             </svg>
                         </div>
-                        <div class="table-card-name">@ban.Tenbanphong</div>
-                        <div class="table-card-capacity">(@ban.Succhua người)</div>
+                        <div class="table-card-name">@ban.TenBanPhong</div>
+                        <div class="table-card-capacity">(@ban.SucChua người)</div>
                     </div>
                 }
             </div>
@@ -191,8 +197,8 @@
                 <button class="category-btn active" data-category-id="all">Tất cả</button>
                 @foreach (var danhMuc in danhSachDanhMuc)
                 {
-                    <button class="category-btn" data-category-id="@danhMuc.Danhmucid">
-                        @danhMuc.Tendanhmuc
+                    <button class="category-btn" data-category-id="@danhMuc.DanhMucId">
+                        @danhMuc.TenDanhMuc
                     </button>
                 }
             </div>
@@ -200,25 +206,25 @@
             <div class="monan-list-container" id="addMonAnList">
                 @foreach (var mon in danhSachMonAn)
                 {
-                    string folder = (mon.Loaimon == "Combo") ? "Setmonan" : "Monan";
+                    string folder = (mon.LoaiMon == "Combo") ? "Setmonan" : "Monan";
                     // Đường dẫn ảo /shared/
-                    string imagePath = $"/shared/{folder}/{(mon.Hinhanhurl ?? "default.jpg")}";
+                    string imagePath = $"/shared/{folder}/{(mon.HinhAnhUrl ?? "default.jpg")}";
 
-                    <div class="monan-item" data-monan-category-id="@mon.Danhmucid">
+                    <div class="monan-item" data-monan-category-id="@mon.DanhMucId">
                         <img class="monan-item-img"
                              src="@imagePath"
-                             alt="@mon.Tenmon"
+                             alt="@mon.TenMon"
                              onerror="this.src='/shared/Monan/default.jpg';" />
 
                         <div class="monan-item-info">
-                            <strong>@mon.Tenmon</strong>
-                            <span>@mon.Dongia.ToString("n0")đ</span>
+                            <strong>@mon.TenMon</strong>
+                            <span>@mon.DonGia?.ToString("n0")đ</span>
                         </div>
 
                         <button type="button" class="btn-add-mon"
-                                data-id="@mon.Monanid"
-                                data-name="@mon.Tenmon"
-                                data-price="@mon.Dongia">
+                                data-id="@mon.MonAnId"
+                                data-name="@mon.TenMon"
+                                data-price="@mon.DonGia">
                             Chọn
                         </button>
                     </div>
@@ -231,14 +237,14 @@
 @section Scripts {
     <script>
         var originalItemsData = @Html.Raw(Json.Serialize(itemsToShow));
-        var serverDatBanId = @Model.Datbanid;
+        var serverDatBanId = @Model.DatBanId;
 
         if (typeof window.getAuthState !== 'function') {
             window.getAuthState = function() {
                 var localAuth = localStorage.getItem("user") || localStorage.getItem("account") || localStorage.getItem("auth");
 
                 if (localAuth) {
-                    return localAuth; 
+                    return localAuth;
                 }
 
                 var currentUser = '@(User.Identity?.Name ?? "")';

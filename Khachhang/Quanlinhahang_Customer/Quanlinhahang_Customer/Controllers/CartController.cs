@@ -39,25 +39,26 @@ namespace Quanlinhahang_Customer.Controllers
             HttpContext.Session.SetString(SESSION_CART_KEY, JsonConvert.SerializeObject(cart));
         }
 
-        // POST /Cart/AddToCart
         [HttpPost]
         public async Task<IActionResult> AddToCart([FromForm] int monAnId)
         {
-            // [FIX CAST]: Tìm kiếm bằng decimal (vì DB là decimal)
-            var mon = await _context.Monans.FindAsync((decimal)monAnId);
+            // [SỬA]: Xóa ép kiểu (decimal) vì SQL Server Identity ID là kiểu int
+            var mon = await _context.MonAns.FindAsync(monAnId);
 
             if (mon == null) return NotFound(new { success = false, message = "Món không tồn tại" });
 
             var cart = GetCartItems();
             var item = cart.FirstOrDefault(c => c.MonAnId == monAnId);
+
             if (item == null)
             {
                 cart.Add(new CartItem
                 {
-                    // [FIX ERROR 55]: Ép kiểu decimal sang int cho Model CartItem
-                    MonAnId = (int)mon.Monanid,
-                    TenMon = mon.Tenmon,
-                    Gia = mon.Dongia,
+                    // [SỬA]: Cập nhật tên thuộc tính PascalCase (MonAnId, TenMon, DonGia)
+                    // Không cần ép kiểu (int)mon.Monanid nữa vì bản thân nó đã là int
+                    MonAnId = mon.MonAnId,
+                    TenMon = mon.TenMon,
+                    Gia = (decimal)mon.DonGia,
                     SoLuong = 1
                 });
             }

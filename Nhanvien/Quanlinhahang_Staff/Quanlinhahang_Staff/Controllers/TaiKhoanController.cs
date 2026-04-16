@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Quanlinhahang.Data.Models; // Correct Data Model Namespace
+using Microsoft.EntityFrameworkCore;
+using Quanlinhahang.Data.Models;
 using Quanlinhahang_Staff.Models.ViewModels;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,7 +12,7 @@ namespace Quanlinhahang_Staff.Controllers
 {
     public class TaiKhoanController : Controller
     {
-        private readonly QuanLyNhaHangContext _context; // Use the correct Context class
+        private readonly QuanLyNhaHangContext _context;
         private readonly IWebHostEnvironment _env;
 
         public TaiKhoanController(QuanLyNhaHangContext context, IWebHostEnvironment env)
@@ -21,39 +22,39 @@ namespace Quanlinhahang_Staff.Controllers
         }
 
         // ============================================================
-        // 1. HIỂN THỊ THÔNG TIN
+        // 1. HIỂN THỊ THÔNG TIN TÀI KHOẢN NHÂN VIÊN
         // ============================================================
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
 
             if (userId == null)
-                return Redirect("https://localhost:7011/Account/Login"); // Ensure port 7011 is correct for Admin
+                // Chuyển hướng về trang Login chung của hệ thống
+                return Redirect("https://localhost:7011/Account/Login");
 
-            // LINQ Query updated for Oracle case-sensitivity (PascalCase typically generated)
-            var info = (
-                from nv in _context.Nhanviens // Table: Nhanviens
-                join tk in _context.Taikhoans on nv.Taikhoanid equals tk.Taikhoanid // Join keys: Taikhoanid
-                where tk.Taikhoanid == userId
+            var info = await (
+                from nv in _context.NhanViens
+                join tk in _context.TaiKhoans on nv.TaiKhoanId equals tk.TaiKhoanId
+                where tk.TaiKhoanId == userId
                 select new TaiKhoanStaffVM
                 {
-                    // Map Entity properties (PascalCase) to ViewModel
-                    NhanVienID = nv.Nhanvienid,
-                    HoTen = nv.Hoten,
-                    SoDienThoai = nv.Sodienthoai,
-                    ChucVu = nv.Chucvu,
-                    NgayVaoLam = nv.Ngayvaolam,
-                    TrangThaiNV = nv.Trangthai,
+                    NhanVienID = nv.NhanVienId,
+                    HoTen = nv.HoTen,
+                    SoDienThoai = nv.SoDienThoai,
+                    ChucVu = nv.ChucVu,
 
-                    TaiKhoanID = tk.Taikhoanid,
-                    TenDangNhap = tk.Tendangnhap,
+                    NgayVaoLam = nv.NgayVaoLam.HasValue ? nv.NgayVaoLam.Value.ToDateTime(TimeOnly.MinValue) : null,
+                    TrangThaiNV = nv.TrangThai,
+
+                    TaiKhoanID = tk.TaiKhoanId,
+                    TenDangNhap = tk.TenDangNhap,
                     Email = tk.Email,
-                    // Convert Enum to String for display/ViewModel
-                    VaiTro = tk.Vaitro.ToString(),
-                    TrangThaiTK = tk.Trangthai,
-                    MatKhauHash = tk.Matkhauhash
+
+                    VaiTro = tk.VaiTro, // VaiTro trong SQL là string
+                    TrangThaiTK = tk.TrangThai,
+                    MatKhauHash = tk.MatKhauHash
                 }
-            ).FirstOrDefault();
+            ).FirstOrDefaultAsync();
 
             if (info == null)
                 return NotFound();
@@ -65,30 +66,33 @@ namespace Quanlinhahang_Staff.Controllers
         // 2. CẬP NHẬT THÔNG TIN (GỘP CẢ ĐỔI MẬT KHẨU)
         // ============================================================
         [HttpPost]
-        public IActionResult CapNhat(TaiKhoanStaffVM model, string NewPassword)
+        public async Task<IActionResult> CapNhat(TaiKhoanStaffVM model, string NewPassword)
         {
-            var nv = _context.Nhanviens.FirstOrDefault(x => x.Nhanvienid == model.NhanVienID);
+            // 1. Cập nhật bảng Nhân Viên
+            var nv = await _context.NhanViens.FirstOrDefaultAsync(x => x.NhanVienId == model.NhanVienID);
             if (nv != null)
             {
-                nv.Hoten = model.HoTen ?? "";
-                nv.Sodienthoai = model.SoDienThoai ?? "";
+                nv.HoTen = model.HoTen ?? "";
+                nv.SoDienThoai = model.SoDienThoai ?? "";
             }
 
-            var tk = _context.Taikhoans.FirstOrDefault(x => x.Taikhoanid == model.TaiKhoanID);
+            // 2. Cập nhật bảng Tài Khoản
+            var tk = await _context.TaiKhoans.FirstOrDefaultAsync(x => x.TaiKhoanId == model.TaiKhoanID);
             if (tk != null)
             {
                 tk.Email = model.Email ?? "";
 
+                // Kiểm tra nếu người dùng nhập mật khẩu mới và không phải là placeholder
                 if (!string.IsNullOrEmpty(NewPassword) && NewPassword != "********")
                 {
-                    tk.Matkhauhash = GetSHA256(NewPassword);
+                    tk.MatKhauHash = GetSHA256(NewPassword);
                 }
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             TempData["update"] = true;
-            TempData["msg"] = "Cập nhật thông tin thành công!";
+            TempData["msg"] = "Cập nhật thông tin cá nhân thành công!";
             return RedirectToAction("Index");
         }
 
@@ -110,14 +114,20 @@ namespace Quanlinhahang_Staff.Controllers
         // ======================== LOGOUT ========================
         public async Task<IActionResult> Logout()
         {
-            // 1. Xóa Cookie
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-            // 2. Xóa Session
             HttpContext.Session.Clear();
 
-            // 3. Chuyển hướng về Admin Login
+            // Chuyển hướng về Login chung
             return Redirect("https://localhost:7011/Account/Login");
+        }
+
+        [HttpGet]
+        [Route("AccessDenied")]
+        public IActionResult AccessDenied()
+        {
+            ViewBag.Message = "Bạn không có quyền truy cập vào trang này!";
+            return View();
         }
     }
 }

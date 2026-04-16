@@ -12,3 +12,19 @@ C:\Users\ADMIN\source\repos\web kethop\Quanlinhahang-Oracle\Quanlinhahang.Data\o
 C:\Users\ADMIN\source\repos\web kethop\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.pdb
 C:\Users\ADMIN\source\repos\web kethop\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.genruntimeconfig.cache
 C:\Users\ADMIN\source\repos\web kethop\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\ref\Quanlinhahang.Data.dll
+C:\Users\ADMIN\source\repos\web kethop\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.sourcelink.json
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\bin\Debug\net8.0\Quanlinhahang.Data.deps.json
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\bin\Debug\net8.0\Quanlinhahang.Data.runtimeconfig.json
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\bin\Debug\net8.0\Quanlinhahang.Data.dll
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\bin\Debug\net8.0\Quanlinhahang.Data.pdb
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.csproj.AssemblyReference.cache
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.AssemblyInfoInputs.cache
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.AssemblyInfo.cs
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.csproj.CoreCompileInputs.cache
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.sourcelink.json
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.dll
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\refint\Quanlinhahang.Data.dll
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.pdb
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\Quanlinhahang.Data.genruntimeconfig.cache
+C:\Users\ADMIN\source\repos\Quanlinhahang-Oracle\Quanlinhahang.Data\obj\Debug\net8.0\ref\Quanlinhahang.Data.dll

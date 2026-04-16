@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Quanlinhahang.Data;
 using Quanlinhahang.Data.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,9 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("QLNH");
 
 builder.Services.AddDbContext<QuanLyNhaHangContext>(options =>
-    options.UseOracle(connectionString, b =>
-        b.UseOracleSQLCompatibility(OracleSQLCompatibility.DatabaseVersion19)
-    ));
+    options.UseSqlServer(AppConfig.ConnectionString));
 
 builder.Services.AddSession(options =>
 {
@@ -73,5 +72,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+app.Urls.Add($"http://0.0.0.0:{port}");
 
 app.Run();

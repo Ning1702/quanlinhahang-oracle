@@ -4,15 +4,20 @@ const LS_CART_KEY = "cart";
 const vnd = (n) => (n || 0).toLocaleString("vi-VN", { style: "currency", currency: "VND" });
 
 // --- HELPER ---
-function safeParse(raw) { try { return JSON.parse(raw); } catch { return null; } }
-function getAuthState() { return localStorage.getItem("authUser") || sessionStorage.getItem("authUser") || null; }
+function safeParse(raw) {
+    try { return JSON.parse(raw); } catch { return null; }
+}
+function getAuthState() {
+    return localStorage.getItem("authUser") || sessionStorage.getItem("authUser") || null;
+}
 
-// --- CART ---
+// --- CART (Xử lý Giỏ hàng) ---
 function getCartArray() {
     const raw = localStorage.getItem(LS_CART_KEY);
     if (!raw) return [];
     const parsed = safeParse(raw);
     if (!parsed) return [];
+    // Hỗ trợ cả 2 định dạng lưu trữ cũ (Mảng) và mới (Object Map)
     if (Array.isArray(parsed)) return parsed;
     return Object.values(parsed);
 }
@@ -21,12 +26,18 @@ function saveCartArray(arr) {
     const map = {};
     (arr || []).forEach(it => {
         if (!it || !it.id) return;
-        map[it.id] = { id: it.id, name: it.name, price: Number(it.price || 0), qty: Number(it.qty || 1) };
+        // Đảm bảo dữ liệu số chuẩn xác
+        map[it.id] = {
+            id: it.id,
+            name: it.name,
+            price: Number(it.price || 0),
+            qty: Number(it.qty || 1)
+        };
     });
     try { localStorage.setItem(LS_CART_KEY, JSON.stringify(map)); } catch (e) { console.warn(e); }
 }
 
-// --- RENDER SUMMARY ---
+// --- RENDER SUMMARY (Hiển thị Giỏ hàng bên phải) ---
 function renderSummary() {
     const data = getCartArray();
     const $body = $("#summaryBody");
@@ -63,7 +74,7 @@ function renderSummary() {
     $total.text(vnd(total));
 }
 
-// --- CHECK LOGIN ---
+// --- CHECK LOGIN (Hiển thị tên người dùng) ---
 function renderUserGreeting() {
     const authRaw = getAuthState();
     const $box = $("#userGreetingBox");
@@ -73,7 +84,7 @@ function renderUserGreeting() {
         if (auth && auth.fullName) {
             $name.text(auth.fullName);
             $box.show();
-            return auth.username;
+            return auth.username; // Trả về username để dùng khi submit
         }
     }
     $box.hide();
@@ -81,15 +92,18 @@ function renderUserGreeting() {
 }
 
 $(document).ready(function () {
+    // 1. Khởi tạo giao diện
     renderSummary();
     const username = renderUserGreeting();
+
+    // Nếu chưa đăng nhập -> Ẩn form, hiện thông báo
     if (!username) {
         $("#bookingForm").hide();
         $("#userGreetingBox").html('<p class="alert-error">Bạn cần đăng nhập để đặt bàn.</p>').show();
         return;
     }
 
-    // --- XỬ LÝ MODAL CHỌN BÀN (GỌI API) ---
+    // 2. XỬ LÝ MODAL CHỌN BÀN (GỌI API)
     const $tableMapModal = $("#tableMapModal");
     const $hiddenInput = $("#selectedBanPhongId");
     const $openTableMapBtn = $("#openTableMapBtn");
@@ -119,6 +133,7 @@ $(document).ready(function () {
                 if (res.success) {
                     renderTableMap(res.data);
 
+                    // Highlight bàn đang chọn (nếu có)
                     const currentId = $hiddenInput.val();
                     if (currentId) $(`.table-card[data-id='${currentId}']`).addClass("selected");
 
@@ -170,7 +185,7 @@ $(document).ready(function () {
 
     $("#closeTableMapModal").on("click", function () { $tableMapModal.removeClass("active"); });
 
-    // Bắt sự kiện click bàn
+    // Bắt sự kiện click vào từng bàn
     $tableMapModal.on("click", ".table-card", function (e) {
         e.preventDefault();
         const $card = $(this);
@@ -181,11 +196,13 @@ $(document).ready(function () {
         }
 
         if ($card.hasClass("selected")) {
+            // Bỏ chọn
             $card.removeClass("selected");
             $hiddenInput.val("");
             $openTableMapBtn.text("Chọn bàn từ sơ đồ");
             $openTableMapBtn.removeClass("selected");
         } else {
+            // Chọn mới
             $(".table-card.selected").removeClass("selected");
             $card.addClass("selected");
 
@@ -193,11 +210,12 @@ $(document).ready(function () {
             $openTableMapBtn.text(`Đã chọn: ${$card.data("name")}`);
             $openTableMapBtn.addClass("selected");
 
+            // Đóng modal sau khi chọn
             setTimeout(() => { $tableMapModal.removeClass("active"); }, 200);
         }
     });
 
-    // --- CART EVENTS ---
+    // 3. CART EVENTS (Tăng/Giảm/Xóa món)
     $("#summaryBody").on("click", ".qty-btn", function (e) {
         const $btn = $(this);
         const id = $btn.data("id");
@@ -221,9 +239,11 @@ $(document).ready(function () {
         }
     });
 
-    // --- SUBMIT ---
+    // 4. SUBMIT FORM (Gửi Đặt Bàn)
     $("#bookingForm").on("submit", function (e) {
         e.preventDefault();
+
+        // Validate cơ bản
         let cart = getCartArray();
         if (!cart || cart.length === 0) { alert("Giỏ hàng trống!"); return; }
 
@@ -238,6 +258,7 @@ $(document).ready(function () {
 
         if (!bookingDate || !timeSlot) { alert("Vui lòng chọn ngày và giờ."); return; }
 
+        // Tạo Payload chuẩn JSON
         const payload = {
             username: auth.username,
             bookingDate: bookingDate,
@@ -245,16 +266,26 @@ $(document).ready(function () {
             guestCount: guestCount,
             BanPhongId: banPhongId,
             note: $("#note").val(),
-            items: cart.map(it => ({ id: it.id, name: it.name, price: Number(it.price), qty: Number(it.qty) }))
+            items: cart.map(it => ({
+                id: it.id,
+                name: it.name,
+                price: Number(it.price),
+                qty: Number(it.qty)
+            }))
         };
 
         const $submitBtn = $("#bookingForm .btn-submit");
         $submitBtn.prop("disabled", true).text("Đang xử lý...");
 
+        // Gửi AJAX POST (Đã sửa lỗi 404/ContentType)
         $.ajax({
-            url: "/DatBan/Submit", type: "POST", contentType: "application/json", data: JSON.stringify(payload),
+            url: "/DatBan/Submit",
+            type: "POST", // BẮT BUỘC: POST
+            contentType: "application/json", // BẮT BUỘC: JSON
+            data: JSON.stringify(payload), // BẮT BUỘC: Stringify
             success: function (res) {
                 if (res.success) {
+                    // Thành công: Xóa giỏ hàng & Hiện modal thông báo
                     localStorage.removeItem(LS_CART_KEY);
                     renderSummary();
                     $("#bookingModal").addClass("active");
@@ -264,7 +295,9 @@ $(document).ready(function () {
                 }
             },
             error: function (xhr) {
-                alert("Lỗi kết nối.");
+                // Xử lý lỗi server trả về
+                const msg = xhr.responseJSON?.message || "Lỗi kết nối đến máy chủ.";
+                alert("Thất bại: " + msg);
                 $submitBtn.prop("disabled", false).text("Xác nhận đặt bàn");
             }
         });

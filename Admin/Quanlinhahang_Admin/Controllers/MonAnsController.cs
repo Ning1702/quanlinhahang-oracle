@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Quanlinhahang.Data.Models;
@@ -6,6 +7,7 @@ using Quanlinhahang_Admin.Services;
 
 namespace Quanlinhahang_Admin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class MonAnsController : Controller
     {
         private readonly QuanLyNhaHangContext _context;
@@ -17,94 +19,162 @@ namespace Quanlinhahang_Admin.Controllers
             _storageService = storageService;
         }
 
+        // ==========================================
+        // 1. INDEX
+        // ==========================================
+        public async Task<IActionResult> Index()
+        {
+            // Tên DbSet đã đổi thành MonAns, Navigation property thành DanhMuc (hoặc DanhMucMon tùy bản EF Core sinh ra)
+            var data = _context.MonAns.Include(m => m.DanhMuc);
 
+            // Load danh sách danh mục để đổ vào ô tìm kiếm
+            ViewBag.DanhMucList = await _context.DanhMucMons.ToListAsync();
+            return View(await data.ToListAsync());
+        }
+
+        // ==========================================
+        // 2. CREATE (GET) - Hiển thị form thêm
+        // ==========================================
+        public IActionResult Create()
+        {
+            LoadViewBag(); // 👇 Nạp dữ liệu cho Dropdown
+            return View();
+        }
+
+        // ==========================================
+        // 3. CREATE (POST) - Xử lý thêm
+        // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Monan monAn, IFormFile fHinhAnh)
+        public async Task<IActionResult> Create(MonAn monAn, IFormFile fHinhAnh)
         {
+            ModelState.Remove("DanhMuc"); // Loại bỏ Navigation Property để pass Validation
+
             if (ModelState.IsValid)
             {
                 if (fHinhAnh != null)
                 {
-                    // Lưu vào SharedImages thông qua Service
-                    monAn.Hinhanhurl = await _storageService.SaveFileAsync(fHinhAnh);
+                    monAn.HinhAnhUrl = await _storageService.SaveFileAsync(fHinhAnh);
+                }
+
+                if (string.IsNullOrEmpty(monAn.HinhAnhUrl))
+                {
+                    monAn.HinhAnhUrl = "default.jpg";
                 }
 
                 _context.Add(monAn);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            // Load lại ViewBag nếu lỗi
-            ViewBag.DanhMucID = new SelectList(_context.Danhmucmons, "Danhmucid", "Tendanhmuc", monAn.Danhmucid);
+
+            LoadViewBag(monAn.DanhMucId, monAn.TrangThai);
             return View(monAn);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Monan monAn, IFormFile? HinhAnh)
+        // ==========================================
+        // 4. EDIT (GET) - Hiển thị form sửa
+        // ==========================================
+        public async Task<IActionResult> Edit(int? id)
         {
-            if (id != monAn.Monanid) return NotFound();
+            if (id == null) return NotFound();
 
-            // Lưu ý: Validate ModelState ở đây nếu cần
+            var monAn = await _context.MonAns
+                .Include(m => m.DanhMuc)
+                .FirstOrDefaultAsync(m => m.MonAnId == id);
 
-            var existing = await _context.Monans.FindAsync(id);
-            if (existing == null) return NotFound();
+            if (monAn == null) return NotFound();
 
-            // Cập nhật thông tin
-            existing.Tenmon = monAn.Tenmon;
-            existing.Danhmucid = monAn.Danhmucid;
-            existing.Dongia = monAn.Dongia;
-            existing.Trangthai = monAn.Trangthai;
-            existing.Mota = monAn.Mota;
-            if (HinhAnh != null)
-            {
-                // 1. Xóa ảnh cũ (nếu có) khỏi SharedImages
-                if (!string.IsNullOrEmpty(existing.Hinhanhurl))
-                {
-                    await _storageService.DeleteFileAsync(existing.Hinhanhurl);
-                }
-
-                // 2. Lưu ảnh mới vào SharedImages
-                existing.Hinhanhurl = await _storageService.SaveFileAsync(HinhAnh);
-            }
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Monans.Any(e => e.Monanid == id)) return NotFound();
-                else throw;
-            }
-
-            TempData["msg"] = "Cập nhật thành công!";
-            return RedirectToAction(nameof(Index));
+            LoadViewBag(monAn.DanhMucId, monAn.TrangThai);
+            return View(monAn);
         }
 
-        // =============================
-        // DELETE (AJAX) - ĐÃ SỬA
-        // =============================
+        // ==========================================
+        // 5. EDIT (POST) - Xử lý sửa 
+        // ==========================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, MonAn monAn, IFormFile? fHinhAnh)
+        {
+            if (id != monAn.MonAnId) return NotFound();
+
+            ModelState.Remove("DanhMuc");
+            ModelState.Remove("HinhAnhUrl");
+            ModelState.Remove("LoaiMon");
+            // Đã xóa ModelState.Remove("Ngaytao") vì schema mới không có cột này trong MonAn
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var existingMon = await _context.MonAns.FindAsync(id);
+                    if (existingMon == null) return NotFound();
+
+                    existingMon.TenMon = monAn.TenMon;
+                    existingMon.DanhMucId = monAn.DanhMucId;
+                    existingMon.DonGia = monAn.DonGia;
+                    existingMon.TrangThai = monAn.TrangThai;
+                    existingMon.MoTa = monAn.MoTa;
+
+                    if (fHinhAnh != null)
+                    {
+                        if (!string.IsNullOrEmpty(existingMon.HinhAnhUrl) && existingMon.HinhAnhUrl != "default.jpg")
+                        {
+                            await _storageService.DeleteFileAsync(existingMon.HinhAnhUrl);
+                        }
+
+                        existingMon.HinhAnhUrl = await _storageService.SaveFileAsync(fHinhAnh);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    TempData["msg"] = "Cập nhật thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "Lỗi lưu: " + ex.Message);
+                }
+            }
+
+            // Nếu thất bại, nạp lại Dropdown để hiện Form
+            LoadViewBag(monAn.DanhMucId, monAn.TrangThai);
+            return View(monAn);
+        }
+
+        // ==========================================
+        // 6. DELETE
+        // ==========================================
         [HttpPost]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var mon = await _context.Monans.FindAsync(id);
+            var mon = await _context.MonAns.FindAsync(id);
             if (mon == null) return NotFound();
 
-            // Xử lý xóa ràng buộc con (Chi tiết hóa đơn)
-            var ct = await _context.Chitiethoadons.Where(x => x.Monanid == id).ToListAsync();
-            if (ct.Any()) _context.Chitiethoadons.RemoveRange(ct);
-
-            // Xóa ảnh vật lý trong SharedImages
-            if (!string.IsNullOrEmpty(mon.Hinhanhurl))
+            // Kiểm tra và xóa dữ liệu liên kết ở ChiTietHoaDon
+            var ct = await _context.ChiTietHoaDons.Where(x => x.MonAnId == id).ToListAsync();
+            if (ct.Any())
             {
-                await _storageService.DeleteFileAsync(mon.Hinhanhurl);
+                _context.ChiTietHoaDons.RemoveRange(ct);
             }
 
-            _context.Monans.Remove(mon);
-            await _context.SaveChangesAsync();
+            if (!string.IsNullOrEmpty(mon.HinhAnhUrl) && mon.HinhAnhUrl != "default.jpg")
+            {
+                await _storageService.DeleteFileAsync(mon.HinhAnhUrl);
+            }
 
+            _context.MonAns.Remove(mon);
+            await _context.SaveChangesAsync();
             return Ok(new { message = "success" });
+        }
+
+        private bool MonAnExists(int id) => _context.MonAns.Any(e => e.MonAnId == id);
+
+        private void LoadViewBag(object selectedDanhmuc = null, object selectedTrangThai = null)
+        {
+            // Đã cập nhật thành DanhMucId và TenDanhMuc
+            ViewData["DanhMucID"] = new SelectList(_context.DanhMucMons, "DanhMucId", "TenDanhMuc", selectedDanhmuc);
+
+            var statusList = new List<string> { "Đang phục vụ", "Ngừng phục vụ", "Hết hàng" };
+            ViewBag.TrangThaiList = new SelectList(statusList, selectedTrangThai);
         }
     }
 }

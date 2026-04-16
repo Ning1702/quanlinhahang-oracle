@@ -3,33 +3,33 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Datban
+public partial class DatBan
 {
-    public int Datbanid { get; set; }
+    public int DatBanId { get; set; }
 
-    public int? Khachhangid { get; set; }
+    public int? KhachHangId { get; set; }
 
-    public int? Banphongid { get; set; }
+    public int? BanPhongId { get; set; }
 
-    public int Khunggioid { get; set; }
+    public int? KhungGioId { get; set; }
 
-    public DateTime Ngayden { get; set; }
+    public DateOnly? NgayDen { get; set; }
 
-    public int Songuoi { get; set; }
+    public int? SoNguoi { get; set; }
 
-    public long? Tongtiendukien { get; set; }
+    public string? YeuCauDacBiet { get; set; }
 
-    public string? Yeucaudacbiet { get; set; }
+    public int? TrangThaiId { get; set; }
 
-    public string Trangthai { get; set; } = null!;
+    public DateTime? ThoiGianTaoDon { get; set; }
 
-    public DateTime Ngaytao { get; set; }
+    public virtual BanPhong? BanPhong { get; set; }
 
-    public virtual Banphong? Banphong { get; set; }
+    public virtual HoaDon? HoaDon { get; set; }
 
-    public virtual ICollection<Hoadon> Hoadons { get; set; } = new List<Hoadon>();
+    public virtual KhachHang? KhachHang { get; set; }
 
-    public virtual Khachhang? Khachhang { get; set; }
+    public virtual KhungGio? KhungGio { get; set; }
 
-    public virtual Khunggio Khunggio { get; set; } = null!;
+    public virtual TrangThaiDatBan? TrangThai { get; set; }
 }

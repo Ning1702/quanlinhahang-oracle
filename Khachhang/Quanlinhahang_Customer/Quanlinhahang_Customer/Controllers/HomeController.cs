@@ -31,47 +31,40 @@ namespace Quanlinhahang_Customer.Controllers
         {
             var vm = new MenuViewModel();
 
-            // 1. LOAD DANH MỤC
-            var danhMucList = await _db.Danhmucmons.OrderBy(dm => dm.Danhmucid).ToListAsync();
+            // Sửa Danhmucmons -> DanhMucMons, Danhmucid -> DanhMucId
+            var danhMucList = await _db.DanhMucMons.OrderBy(dm => dm.DanhMucId).ToListAsync();
 
-            // Xử lý trùng tên (nếu cần)
             vm.DanhMucList = danhMucList
-                .GroupBy(d => d.Tendanhmuc.Trim())
+                .GroupBy(d => d.TenDanhMuc.Trim()) // Sửa Tendanhmuc -> TenDanhMuc
                 .Select(g => g.First())
                 .ToList();
 
-            // 2. TRUY VẤN MÓN ĂN
-            var q = _db.Monans.AsQueryable();
+            // Sửa Monans -> MonAns
+            var q = _db.MonAns.AsQueryable();
 
-            // Lọc theo danh mục
             if (danhMucId.HasValue && danhMucId.Value > 0)
             {
-                q = q.Where(m => m.Danhmucid == danhMucId.Value);
+                q = q.Where(m => m.DanhMucId == danhMucId.Value);
                 vm.DanhMucId = danhMucId;
             }
 
-            // Tìm kiếm
             if (!string.IsNullOrWhiteSpace(search))
             {
-                // [ORACLE FIX]: Chuyển cả từ khóa và dữ liệu trong DB về chữ hoa để so sánh
-                // Oracle phân biệt hoa thường rất chặt (ví dụ: tìm "ga" sẽ không ra "Gà" nếu không xử lý)
                 var s = search.Trim().ToUpper();
 
-                q = q.Where(m => m.Tenmon.ToUpper().Contains(s)
-                              || (m.Mota != null && m.Mota.ToUpper().Contains(s)));
+                // Sửa Tenmon -> TenMon, Mota -> MoTa
+                q = q.Where(m => m.TenMon.ToUpper().Contains(s)
+                              || (m.MoTa != null && m.MoTa.ToUpper().Contains(s)));
 
                 vm.Search = search;
             }
 
-            // Chỉ lấy món đang còn bán (Tùy chọn)
-            // q = q.Where(m => m.TrangThai == "Còn bán");
-
-            vm.MonAnList = await q.OrderBy(m => m.Monanid).ToListAsync();
+            // Sửa Monanid -> MonAnId
+            vm.MonAnList = await q.OrderBy(m => m.MonAnId).ToListAsync();
 
             return View(vm);
         }
 
-        // API lưu giỏ hàng vào Session
         [HttpPost]
         public IActionResult SaveCart([FromBody] List<CartItem> cart)
         {
@@ -80,19 +73,18 @@ namespace Quanlinhahang_Customer.Controllers
                 return BadRequest("Giỏ hàng trống");
             }
 
-            // Lưu danh sách CartItem vào Session dưới dạng chuỗi JSON
             HttpContext.Session.SetString("CartData", JsonConvert.SerializeObject(cart));
 
             return Ok(new { success = true });
         }
 
-        // Action Đặt bàn: Tải danh sách bàn cho sơ đồ
         [HttpGet]
         public async Task<IActionResult> DatBan()
         {
-            var danhSachBan = await _db.Banphongs
-                                     .Include(b => b.Loaibanphong)
-                                     .OrderBy(b => b.Banphongid)
+            // Sửa Banphongs -> BanPhongs, Loaibanphong -> LoaiBanPhong, Banphongid -> BanPhongId
+            var danhSachBan = await _db.BanPhongs
+                                     .Include(b => b.LoaiBanPhong)
+                                     .OrderBy(b => b.BanPhongId)
                                      .ToListAsync();
 
             var viewModel = new DatBanViewModel

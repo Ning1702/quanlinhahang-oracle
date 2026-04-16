@@ -1,0 +1,87 @@
+﻿@model IEnumerable<Quanlinhahang.Data.Models.TaiKhoan>
+
+@{
+    ViewData["Title"] = "Quản lý Tài khoản hệ thống";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Tài khoản Hệ thống (Admin & Staff)</h1>
+
+    @if (TempData["error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["error"]</div>
+    }
+    @if (TempData["msg"] != null)
+    {
+        <div class="alert alert-success">@TempData["msg"]</div>
+    }
+
+    <p>
+        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus"></i> Tạo tài khoản mới</a>
+    </p>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên đăng nhập</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.TaiKhoanId</td>
+                            <td>@item.TenDangNhap</td>
+                            <td>@item.Email</td>
+                            <td>
+                                @* Đã sửa: So sánh trực tiếp bằng chuỗi string *@
+                                @if (item.VaiTro == "Admin")
+                                {
+                                    <span class="badge bg-danger">Admin</span>
+                                }
+                                else if (item.VaiTro == "Staff")
+                                {
+                                    <span class="badge bg-primary">Staff</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info">@item.VaiTro</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.TrangThai == "Hoạt động")
+                                {
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@item.TrangThai</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@item.TaiKhoanId" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i> Sửa
+                                </a>
+
+                                <form asp-action="Delete" asp-route-id="@item.TaiKhoanId" method="post" style="display:inline"
+                                      onsubmit="return confirm('Bạn có chắc muốn xóa tài khoản này?');">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i> Xóa
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -16,7 +16,8 @@
         <form method="get" asp-action="Menu" asp-controller="Home" class="header-center" onsubmit="return false;">
             <input type="text" id="search-box" name="search" value="@Model.Search" placeholder="🔍Tìm kiếm món ăn, combo..." />
             @{
-                var items = new SelectList(Model.DanhMucList, "Danhmucid", "Tendanhmuc", Model.DanhMucId);
+                // [ĐÃ SỬA]: Danhmucid -> DanhMucId, Tendanhmuc -> TenDanhMuc
+                var items = new SelectList(Model.DanhMucList, "DanhMucId", "TenDanhMuc", Model.DanhMucId);
             }
             @Html.DropDownListFor(m => m.DanhMucId, items, "Tất cả danh mục", new { id = "filter-cat" })
         </form>
@@ -36,30 +37,30 @@
         <p class="subhead">Những set menu được thiết kế cân đối, tiết kiệm hơn so với gọi lẻ.</p>
 
         <div class="menu-grid">
-            @foreach (var mon in Model.MonAnList.Where(m => m.Loaimon == "Combo"))
+            @foreach (var mon in Model.MonAnList.Where(m => m.LoaiMon == "Combo"))
             {
                 // [SỬA]: Folder tên là Setmonan (khớp với thư mục thật trong SharedImages)
                 string folder = "Setmonan";
-                string imageName = mon.Hinhanhurl ?? "default.jpg";
+                string imageName = mon.HinhAnhUrl ?? "default.jpg"; // Hinhanhurl -> HinhAnhUrl
 
                 // [SỬA QUAN TRỌNG]: Đổi /images/ thành /shared/
                 string imagePath = $"/shared/{folder}/{imageName}";
 
-                <article class="menu-card" data-cat="@mon.Danhmucid" data-search="@($"{mon.Tenmon} {mon.Mota}")">
+                <article class="menu-card" data-cat="@mon.DanhMucId" data-search="@($"{mon.TenMon} {mon.MoTa}")">
                     <div class="card-media">
                         <img src="@imagePath"
-                             alt="@mon.Tenmon"
+                             alt="@mon.TenMon"
                              @* [SỬA]: Đường dẫn ảnh lỗi cũng phải trỏ về /shared *@
                              onerror="this.src='/shared/Monan/default.jpg'"
                              class="img-fluid" />
                     </div>
                     <div class="card-body">
-                        <h3>@mon.Tenmon</h3>
-                        <p class="desc">@mon.Mota</p>
+                        <h3>@mon.TenMon</h3>
+                        <p class="desc">@mon.MoTa</p>
                         <div class="price-row">
-                            <span class="new-price">@mon.Dongia.ToString("n0") ₫</span>
+                            <span class="new-price">@mon.DonGia?.ToString("n0") đ</span>
                         </div>
-                        <button class="order-btn" data-id="@mon.Monanid" data-name="@mon.Tenmon" data-price="@mon.Dongia">
+                        <button class="order-btn" data-id="@mon.MonAnId" data-name="@mon.TenMon" data-price="@mon.DonGia">
                             Thêm vào giỏ
                         </button>
                     </div>
@@ -73,29 +74,29 @@
         <p class="subhead">Tự do lựa chọn từng món ăn theo sở thích của bạn.</p>
 
         <div class="menu-grid">
-            @foreach (var mon in Model.MonAnList.Where(m => m.Loaimon != "Combo"))
+            @foreach (var mon in Model.MonAnList.Where(m => m.LoaiMon != "Combo"))
             {
                 string folder = "Monan";
-                string imageName = mon.Hinhanhurl ?? "default.jpg";
+                string imageName = mon.HinhAnhUrl ?? "default.jpg";
 
                 // [SỬA QUAN TRỌNG]: Đổi /images/ thành /shared/
                 string imagePath = $"/shared/{folder}/{imageName}";
 
-                <article class="menu-card" data-cat="@mon.Danhmucid" data-search="@($"{mon.Tenmon} {mon.Mota}")">
+                <article class="menu-card" data-cat="@mon.DanhMucId" data-search="@($"{mon.TenMon} {mon.MoTa}")">
                     <div class="card-media">
                         <img src="@imagePath"
-                             alt="@mon.Tenmon"
+                             alt="@mon.TenMon"
                              @* [SỬA]: Đường dẫn ảnh lỗi *@
                              onerror="this.src='/shared/Monan/default.jpg'"
                              class="img-fluid" />
                     </div>
                     <div class="card-body">
-                        <h3>@mon.Tenmon</h3>
-                        <p class="desc">@mon.Mota</p>
+                        <h3>@mon.TenMon</h3>
+                        <p class="desc">@mon.MoTa</p>
                         <div class="price-row">
-                            <span class="new-price">@mon.Dongia.ToString("n0") ₫</span>
+                            <span class="new-price">@mon.DonGia?.ToString("n0") ₫</span>
                         </div>
-                        <button class="order-btn" data-id="@mon.Monanid" data-name="@mon.Tenmon" data-price="@mon.Dongia">
+                        <button class="order-btn" data-id="@mon.MonAnId" data-name="@mon.TenMon" data-price="@mon.DonGia">
                             Thêm vào giỏ
                         </button>
                     </div>

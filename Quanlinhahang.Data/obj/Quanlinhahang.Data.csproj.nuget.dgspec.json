@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ADMIN\\source\\repos\\web kethop\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\Quanlinhahang.Data.csproj": {}
+    "C:\\Users\\Ning\\Desktop\\Quanlinhahang-Oracle\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\Quanlinhahang.Data.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ADMIN\\source\\repos\\web kethop\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\Quanlinhahang.Data.csproj": {
+    "C:\\Users\\Ning\\Desktop\\Quanlinhahang-Oracle\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\Quanlinhahang.Data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ADMIN\\source\\repos\\web kethop\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\Quanlinhahang.Data.csproj",
+        "projectUniqueName": "C:\\Users\\Ning\\Desktop\\Quanlinhahang-Oracle\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\Quanlinhahang.Data.csproj",
         "projectName": "Quanlinhahang.Data",
-        "projectPath": "C:\\Users\\ADMIN\\source\\repos\\web kethop\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\Quanlinhahang.Data.csproj",
-        "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ADMIN\\source\\repos\\web kethop\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\obj\\",
+        "projectPath": "C:\\Users\\Ning\\Desktop\\Quanlinhahang-Oracle\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\Quanlinhahang.Data.csproj",
+        "packagesPath": "C:\\Users\\Ning\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Ning\\Desktop\\Quanlinhahang-Oracle\\Quanlinhahang-Oracle\\Quanlinhahang.Data\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Ning\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -65,15 +65,15 @@
               "target": "Package",
               "version": "[8.0.11, )"
             },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[8.0.11, )"
+            },
             "Microsoft.EntityFrameworkCore.Tools": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
               "target": "Package",
               "version": "[8.0.11, )"
-            },
-            "Oracle.EntityFrameworkCore": {
-              "target": "Package",
-              "version": "[8.23.60, )"
             }
           },
           "imports": [

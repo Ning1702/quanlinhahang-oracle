@@ -1,4 +1,4 @@
-﻿@model Quanlinhahang.Data.Models.Hoadon
+﻿@model Quanlinhahang.Data.Models.HoaDon
 
 @{
     ViewData["Title"] = "Xóa hóa đơn";
@@ -19,50 +19,43 @@
     <hr />
     <dl class="row">
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Taikhoanid)
+            Mã Tài Khoản
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Taikhoanid)
+            @Html.DisplayFor(model => model.TaiKhoanId)
         </dd>
 
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Ngaylap)
+            Ngày Lập
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Ngaylap)
+            @Html.DisplayFor(model => model.NgayLap)
         </dd>
 
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Tongtien)
+            Tổng Tiền
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Tongtien)
-        </dd>
-
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Hinhthucthanhtoan)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Hinhthucthanhtoan)
+            @Html.DisplayFor(model => model.TongTien)
         </dd>
 
         <dt class="col-sm-2">
             Trạng thái
         </dt>
         <dd class="col-sm-10">
-            @(Model.Trangthai?.Tentrangthai ?? Model.Trangthaiid.ToString())
+            @(Model.TrangThai?.TenTrangThai ?? Model.TrangThaiId.ToString())
         </dd>
 
         <dt class="col-sm-2">
             Mã đặt bàn
         </dt>
         <dd class="col-sm-10">
-            @Model.Datban?.Datbanid
+            @Model.DatBan?.DatBanId
         </dd>
     </dl>
 
     <form asp-action="Delete">
-        <input type="hidden" asp-for="Hoadonid" />
+        <input type="hidden" asp-for="HoaDonId" />
         <input type="submit" value="Xóa" class="btn btn-danger" /> |
         <a href="@returnUrl" class="btn btn-secondary">Quay lại</a>
     </form>

@@ -19,7 +19,6 @@ namespace Quanlinhahang_Customer.Controllers
         {
             try
             {
-                // 1. Kiểm tra kết nối cơ bản
                 bool canConnect = await _context.Database.CanConnectAsync();
 
                 if (!canConnect)
@@ -27,12 +26,9 @@ namespace Quanlinhahang_Customer.Controllers
                     return Content("❌ KHÔNG THỂ KẾT NỐI TỚI ORACLE (CanConnect = false). Kiểm tra lại Connection String, IP, Tường lửa.");
                 }
 
-                // 2. Kiểm tra lấy dữ liệu thực (Test bảng Khách hàng)
-                // Lệnh này sẽ kiểm tra xem EF có map đúng tên bảng KHACHHANG hay không
-                var countKH = await _context.Khachhangs.CountAsync();
+                var countKH = await _context.KhachHangs.CountAsync();
 
-                // 3. Kiểm tra lấy dữ liệu Tài khoản (Test map TAIKHOAN)
-                var countTK = await _context.Taikhoans.CountAsync();
+                var countTK = await _context.TaiKhoans.CountAsync();
 
                 return Content($"✅ KẾT NỐI THÀNH CÔNG!\n" +
                                $"- Kết nối DB: OK\n" +

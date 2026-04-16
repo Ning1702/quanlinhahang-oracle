@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace Quanlinhahang.Data.Models;
 
-public partial class Khunggio
+public partial class KhungGio
 {
-    public int Khunggioid { get; set; }
+    public int KhungGioId { get; set; }
 
-    public string Tenkhunggio { get; set; } = null!;
+    public string? TenKhungGio { get; set; }
 
-    public string Giobatdau { get; set; } = null!;
+    public TimeOnly GioBatDau { get; set; }
 
-    public string Gioketthuc { get; set; } = null!;
+    public TimeOnly GioKetThuc { get; set; }
 
-    public virtual ICollection<Datban> Datbans { get; set; } = new List<Datban>();
+    public virtual ICollection<DatBan> DatBans { get; set; } = new List<DatBan>();
 }
