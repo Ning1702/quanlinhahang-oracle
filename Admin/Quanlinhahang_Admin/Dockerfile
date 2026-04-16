@@ -3,7 +3,7 @@ WORKDIR /src
 
 COPY . .
 
-WORKDIR /src/Admin/Quanlinhahang_Admin/Quanlinhahang_Admin
+WORKDIR /src/Admin/Quanlinhahang_Admin
 RUN dotnet restore "Quanlinhahang_Admin.csproj"
 RUN dotnet publish "Quanlinhahang_Admin.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
