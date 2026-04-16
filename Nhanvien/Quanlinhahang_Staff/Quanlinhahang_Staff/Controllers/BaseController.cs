@@ -12,7 +12,7 @@ namespace Quanlinhahang_Staff.Controllers
 
         protected IActionResult RequireLogin()
         {
-            return Redirect("https://localhost:7011/Account/Login");
+            return RedirectToAction("Login", "Account");
         }
     }
 }

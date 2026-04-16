@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quanlinhahang.Data.Models;
@@ -29,8 +28,7 @@ namespace Quanlinhahang_Staff.Controllers
             int? userId = HttpContext.Session.GetInt32("UserId");
 
             if (userId == null)
-                // Chuyển hướng về trang Login chung của hệ thống
-                return Redirect("https://localhost:7011/Account/Login");
+                return RedirectToAction("Login", "Account");
 
             var info = await (
                 from nv in _context.NhanViens
@@ -43,14 +41,17 @@ namespace Quanlinhahang_Staff.Controllers
                     SoDienThoai = nv.SoDienThoai,
                     ChucVu = nv.ChucVu,
 
-                    NgayVaoLam = nv.NgayVaoLam.HasValue ? nv.NgayVaoLam.Value.ToDateTime(TimeOnly.MinValue) : null,
+                    NgayVaoLam = nv.NgayVaoLam.HasValue
+                        ? nv.NgayVaoLam.Value.ToDateTime(TimeOnly.MinValue)
+                        : null,
+
                     TrangThaiNV = nv.TrangThai,
 
                     TaiKhoanID = tk.TaiKhoanId,
                     TenDangNhap = tk.TenDangNhap,
                     Email = tk.Email,
 
-                    VaiTro = tk.VaiTro, // VaiTro trong SQL là string
+                    VaiTro = tk.VaiTro,
                     TrangThaiTK = tk.TrangThai,
                     MatKhauHash = tk.MatKhauHash
                 }
@@ -68,7 +69,6 @@ namespace Quanlinhahang_Staff.Controllers
         [HttpPost]
         public async Task<IActionResult> CapNhat(TaiKhoanStaffVM model, string NewPassword)
         {
-            // 1. Cập nhật bảng Nhân Viên
             var nv = await _context.NhanViens.FirstOrDefaultAsync(x => x.NhanVienId == model.NhanVienID);
             if (nv != null)
             {
@@ -76,13 +76,11 @@ namespace Quanlinhahang_Staff.Controllers
                 nv.SoDienThoai = model.SoDienThoai ?? "";
             }
 
-            // 2. Cập nhật bảng Tài Khoản
             var tk = await _context.TaiKhoans.FirstOrDefaultAsync(x => x.TaiKhoanId == model.TaiKhoanID);
             if (tk != null)
             {
                 tk.Email = model.Email ?? "";
 
-                // Kiểm tra nếu người dùng nhập mật khẩu mới và không phải là placeholder
                 if (!string.IsNullOrEmpty(NewPassword) && NewPassword != "********")
                 {
                     tk.MatKhauHash = GetSHA256(NewPassword);
@@ -115,11 +113,9 @@ namespace Quanlinhahang_Staff.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
             HttpContext.Session.Clear();
 
-            // Chuyển hướng về Login chung
-            return Redirect("https://localhost:7011/Account/Login");
+            return RedirectToAction("Login", "Account");
         }
 
         [HttpGet]
