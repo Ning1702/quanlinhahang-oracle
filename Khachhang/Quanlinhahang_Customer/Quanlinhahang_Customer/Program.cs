@@ -1,15 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Quanlinhahang.Data;
 using Quanlinhahang.Data.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Lưu ý: Đảm bảo trong appsettings.json tên chuỗi kết nối là "QLNH"
+// Lấy connection string từ Render env hoặc appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("QLNH");
 
+// DbContext
 builder.Services.AddDbContext<QuanLyNhaHangContext>(options =>
-    options.UseSqlServer(AppConfig.ConnectionString));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddSession(options =>
 {
@@ -19,53 +19,24 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
-
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-string sharedFolder = "";
-string currentDir = builder.Environment.ContentRootPath;
-for (int i = 0; i < 5; i++)
-{
-    string tryPath = Path.Combine(currentDir, "SharedImages");
-    if (Directory.Exists(tryPath))
-    {
-        sharedFolder = tryPath;
-        break;
-    }
-    var parent = Directory.GetParent(currentDir);
-    if (parent == null) break;
-    currentDir = parent.FullName;
-}
-
-if (!string.IsNullOrEmpty(sharedFolder))
-{
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(sharedFolder),
-        RequestPath = "/shared"
-    });
-}
-else
-{
-    throw new Exception($"❌ KHÔNG TÌM THẤY folder 'SharedImages' dù đã quét từ: {builder.Environment.ContentRootPath}");
-}
+// BỎ đoạn ép phải có SharedImages local
+// Vì ảnh của bạn đã đưa lên Supabase Storage rồi
+// nên không cần throw exception nữa
 
 app.UseRouting();
-
 app.UseSession();
 app.UseAuthorization();
 
