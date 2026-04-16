@@ -4,10 +4,8 @@ using Quanlinhahang.Data.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Lấy connection string từ Render env hoặc appsettings.json
-var connectionString = builder.Configuration.GetConnectionString("QLNH");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// DbContext
 builder.Services.AddDbContext<QuanLyNhaHangContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -32,11 +30,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// BỎ đoạn ép phải có SharedImages local
-// Vì ảnh của bạn đã đưa lên Supabase Storage rồi
-// nên không cần throw exception nữa
-
 app.UseRouting();
+
 app.UseSession();
 app.UseAuthorization();
 
