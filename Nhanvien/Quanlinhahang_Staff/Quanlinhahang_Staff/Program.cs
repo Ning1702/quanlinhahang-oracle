@@ -1,16 +1,19 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
-using Quanlinhahang.Data;
 using Quanlinhahang.Data.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ====================== 1. CẤU HÌNH DỊCH VỤ ======================
-builder.Services.AddDbContext<QuanLyNhaHangContext>(options =>
-    options.UseSqlServer(AppConfig.ConnectionString));
 
-// 🔥 CẤU HÌNH SESSION
+// Lấy connection string từ appsettings.json hoặc biến môi trường Render:
+// ConnectionStrings__DefaultConnection
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<QuanLyNhaHangContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -20,7 +23,7 @@ builder.Services.AddSession(options =>
     options.Cookie.Name = ".QLNH.Staff.Session";
 });
 
-// SỬA LỖI 2: Đổi /TaiKhoan/ thành /Account/ cho khớp với Controller của bạn
+// Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -28,10 +31,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/Account/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+        options.SlidingExpiration = true;
     });
 
 builder.Services.AddControllersWithViews();
-
 builder.Services.AddSignalR();
 
 // ====================== 2. BUILD APP ======================
@@ -46,30 +49,21 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "..", "..", "..", "SharedImages")),
-    RequestPath = "/SharedImages"
-});
-
-// KÍCH HOẠT SESSION
-app.UseSession();
-
 app.UseRouting();
 
-// SỬA LỖI 1: BẮT BUỘC PHẢI CÓ DÒNG NÀY VÀ PHẢI ĐỨNG TRƯỚC AUTHORIZATION
+// Thứ tự chuẩn
+app.UseSession();
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapHub<Quanlinhahang_Staff.Hubs.NotificationHub>("/notificationHub");
 
-// Cấu hình Route mặc định
+// Route mặc định
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+// Port cho Render
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 app.Urls.Add($"http://0.0.0.0:{port}");
 
