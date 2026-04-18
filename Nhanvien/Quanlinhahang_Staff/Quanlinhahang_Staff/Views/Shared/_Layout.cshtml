@@ -1,5 +1,4 @@
-﻿@inject IConfiguration Configuration
-@* ============================================
+﻿@* ============================================
    _Layout.cshtml - LIGHT & GOLD THEME (Giao diện sáng)
    ============================================ *@
 <!DOCTYPE html>
@@ -16,12 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-    @{
-        var baseUrl = Configuration["SupabaseStorage:BaseUrl"]
-        ?? "https://wmvatmemmvayfojzhshv.supabase.co/storage/v1/object/public/SharedImages";
-        var logoUrl = $"{baseUrl.TrimEnd('/')}/Logo/logoChu.png";
-        var fallbackLogoUrl = $"{baseUrl.TrimEnd('/')}/Monan/default.jpg";
-    }
+    
 
     <style>
         :root {
@@ -291,10 +285,10 @@
                         </button>
 
                         <a class="navbar-brand p-0" asp-controller="Invoices" asp-action="Index">
-                            <img src="@logoUrl"
+                            <img src="https://wmvatmemmvayfojzhshv.supabase.co/storage/v1/object/public/SharedImages/Logo/logoChu.png"
                                  alt="Dé Sounté Mountepré"
                                  class="navbar-logo-img"
-                                 onerror="this.onerror=null;this.src='@fallbackLogoUrl';" />
+                                 onerror="this.onerror=null;this.src='https://wmvatmemmvayfojzhshv.supabase.co/storage/v1/object/public/SharedImages/Monan/default.jpg';" />
                         </a>
 
                         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
