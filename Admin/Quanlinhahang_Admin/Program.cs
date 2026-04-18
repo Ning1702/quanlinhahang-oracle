@@ -13,10 +13,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // ====================== CẤU HÌNH DỊCH VỤ ======================
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddHostedService<BookingTimeoutService>();
-
 builder.Services.AddDbContext<QuanLyNhaHangContext>(options =>
     options.UseNpgsql(connectionString));
+
+// Đăng ký service upload/xóa ảnh cho quản lý món ăn
+builder.Services.AddScoped<IStorageService, StorageService>();
+
+// Background service kiểm tra đơn quá hạn
+builder.Services.AddHostedService<BookingTimeoutService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
