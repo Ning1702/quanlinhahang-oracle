@@ -57,7 +57,7 @@ namespace Quanlinhahang_Customer.Controllers
                         DiaChi = model.Address ?? "",
                         DiemTichLuy = 0,
                         TaiKhoanId = taiKhoan.TaiKhoanId,
-                        NgayTao = DateTime.Now
+                        NgayTao = DateTime.UtcNow
                         // Đã xóa KhachHang.TrangThai vì SQL mới không có cột này
                     };
                     _context.KhachHangs.Add(khachHang);
@@ -267,9 +267,9 @@ namespace Quanlinhahang_Customer.Controllers
             int diem = Convert.ToInt32(khachHang.DiemTichLuy);
 
             var vouchers = new List<object>();
-            string ex30 = DateTime.Now.AddDays(30).ToString("dd/MM/yyyy");
-            string ex90 = DateTime.Now.AddMonths(3).ToString("dd/MM/yyyy");
-            string ex365 = DateTime.Now.AddYears(1).ToString("dd/MM/yyyy");
+            string ex30 = DateTime.UtcNow.AddDays(30).ToString("dd/MM/yyyy");
+            string ex90 = DateTime.UtcNow.AddMonths(3).ToString("dd/MM/yyyy");
+            string ex365 = DateTime.UtcNow.AddYears(1).ToString("dd/MM/yyyy");
 
             vouchers.Add(new { code = "WELCOME10", value = 10, type = "Phần trăm", minOrder = 200000, expiry = ex30, description = "Giảm 10% cho đơn hàng đầu tiên." });
             if (diem >= 1000) vouchers.Add(new { code = "FREE_DRINK", value = 1, type = "Món ăn", minOrder = 0, expiry = ex90, description = $"Tặng 1 đồ uống miễn phí (Hạng {hangThanhVien})." });

@@ -96,7 +96,7 @@ namespace Quanlinhahang_Customer.Controllers
                 return Json(new { success = false, message = "Ngày không hợp lệ" });
 
             var today = DateTime.Today;
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             if (bookingDateTime.Date < today)
             {
@@ -154,7 +154,7 @@ namespace Quanlinhahang_Customer.Controllers
                         SoNguoi = req.guestCount ?? 1,
                         YeuCauDacBiet = req.note,
                         TrangThaiId = 1,
-                        ThoiGianTaoDon = DateTime.Now
+                        ThoiGianTaoDon = DateTime.UtcNow
                     };
                     _context.DatBans.Add(datBan);
                     await _context.SaveChangesAsync();
@@ -162,7 +162,7 @@ namespace Quanlinhahang_Customer.Controllers
                     var hoaDon = new HoaDon
                     {
                         DatBanId = datBan.DatBanId,
-                        NgayLap = DateTime.Now,
+                        NgayLap = DateTime.UtcNow,
                         TongTien = tongTienTinhToan,
                         TrangThaiId = 1,
                         Vatpercent = 10m,
