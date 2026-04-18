@@ -144,11 +144,33 @@
                                 {
                                     foreach (var kg in ViewBag.ListKhungGio)
                                     {
-                                        // Hỗ trợ cả 2 kiểu đặt tên Pascal và camel
-                                        var id = kg.GetType().GetProperty("KhungGioId")?.GetValue(kg) ?? kg.GetType().GetProperty("Khunggioid")?.GetValue(kg);
-                                        var name = kg.GetType().GetProperty("TenKhungGio")?.GetValue(kg) ?? kg.GetType().GetProperty("Tenkhunggio")?.GetValue(kg);
-                                        
-                                        <option value="@id" selected="@(ViewBag.KhungGioIdVal == (int)id)">@name</option>
+                                        var type = kg.GetType();
+
+                                        var id = type.GetProperty("KhungGioId")?.GetValue(kg)
+                                        ?? type.GetProperty("Khunggioid")?.GetValue(kg);
+
+                                        var ten = type.GetProperty("TenKhungGio")?.GetValue(kg)
+                                        ?? type.GetProperty("Tenkhunggio")?.GetValue(kg);
+
+                                        var gioBatDauObj = type.GetProperty("GioBatDau")?.GetValue(kg)
+                                        ?? type.GetProperty("Giobatdau")?.GetValue(kg);
+
+                                        var gioKetThucObj = type.GetProperty("GioKetThuc")?.GetValue(kg)
+                                        ?? type.GetProperty("Gioketthuc")?.GetValue(kg);
+
+                                        string gioBatDau = gioBatDauObj?.ToString()?.Length >= 5
+                                        ? gioBatDauObj.ToString()!.Substring(0, 5)
+                                        : gioBatDauObj?.ToString() ?? "";
+
+                                        string gioKetThuc = gioKetThucObj?.ToString()?.Length >= 5
+                                        ? gioKetThucObj.ToString()!.Substring(0, 5)
+                                        : gioKetThucObj?.ToString() ?? "";
+
+                                        var selected = ViewBag.KhungGioIdVal != null && id != null && ViewBag.KhungGioIdVal == (int)id;
+
+                                        <option value="@id" selected="@selected">
+                                            @ten (@gioBatDau - @gioKetThuc)
+                                        </option>
                                     }
                                 }
                             </select>
