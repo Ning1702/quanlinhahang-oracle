@@ -21,11 +21,17 @@ namespace Quanlinhahang_Admin.Controllers
         }
 
         [HttpGet]
-        public IActionResult Login()
+        public async Task<IActionResult> Login()
         {
             if (User.Identity?.IsAuthenticated == true)
             {
-                return RedirectToAction("Index", "Home");
+                if (User.IsInRole("Admin"))
+                {
+                    return RedirectToAction("Index", "Home");
+                }
+
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                HttpContext.Session.Clear();
             }
 
             return View();
@@ -98,34 +104,30 @@ namespace Quanlinhahang_Admin.Controllers
 
             if (finalRole == "Staff")
             {
-                string staffBaseUrl = _configuration["AppUrls:StaffUrl"] ?? string.Empty;
-
-                if (string.IsNullOrWhiteSpace(staffBaseUrl))
-                {
-                    staffBaseUrl = "https://quanlinhahang-staff.onrender.com";
-                }
-
+                string staffBaseUrl = _configuration["AppUrls:StaffUrl"] ?? "https://quanlinhahang-staff.onrender.com";
                 staffBaseUrl = staffBaseUrl.TrimEnd('/');
 
                 string redirectUrl = $"{staffBaseUrl}/Auth/FromAdmin?userId={user.TaiKhoanId}";
                 return Redirect(redirectUrl);
             }
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login");
         }
 
         [HttpGet]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
 
         [HttpGet]
-        public IActionResult AccessDenied()
+        public async Task<IActionResult> AccessDenied()
         {
-            ViewBag.Message = "Bạn không có quyền truy cập vào trang này!";
-            return View();
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login");
         }
 
         public static string GetSHA256(string str)
