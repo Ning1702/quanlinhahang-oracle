@@ -1,6 +1,12 @@
 ﻿@model IEnumerable<Quanlinhahang.Data.Models.MonAn>
+@inject IConfiguration Configuration
+
 @{
     ViewData["Title"] = "Quản lý món ăn";
+
+    var baseUrl = Configuration["SupabaseStorage:BaseUrl"]
+                  ?? "https://wmvatmemmvayfojzhshv.supabase.co/storage/v1/object/public/SharedImages";
+    baseUrl = baseUrl.TrimEnd('/');
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
@@ -25,7 +31,9 @@
                 </select>
             </div>
             <div class="d-flex justify-content-center mt-3">
-                <button class="btn btn-primary px-5 fw-semibold"><i class="fa fa-search"></i> Tìm kiếm</button>
+                <button class="btn btn-primary px-5 fw-semibold">
+                    <i class="fa fa-search"></i> Tìm kiếm
+                </button>
             </div>
         </form>
     </div>
@@ -50,7 +58,9 @@
         <tbody>
             @if (!Model.Any())
             {
-                <tr><td colspan="6" class="text-muted py-3">Không có món ăn nào.</td></tr>
+                <tr>
+                    <td colspan="6" class="text-muted py-3">Không có món ăn nào.</td>
+                </tr>
             }
             else
             {
@@ -59,33 +69,38 @@
                     <tr id="row-@mon.MonAnId">
                         <td>
                             @{
-                                // LOGIC CHỌN FOLDER (Giống code Menu của bạn)
-                                string folder = "Monan"; // Mặc định
+                                string folder = "Monan";
 
-                                // Nếu là Combo/Set thì chuyển folder
                                 if ((!string.IsNullOrEmpty(mon.LoaiMon) && mon.LoaiMon.Contains("Combo")) ||
-                                (mon.DanhMuc != null && (mon.DanhMuc.TenDanhMuc.Contains("Set") || mon.DanhMuc.TenDanhMuc.Contains("Combo"))))
+                                (mon.DanhMuc != null &&
+                                ((!string.IsNullOrEmpty(mon.DanhMuc.TenDanhMuc) && mon.DanhMuc.TenDanhMuc.Contains("Set")) ||
+                                (!string.IsNullOrEmpty(mon.DanhMuc.TenDanhMuc) && mon.DanhMuc.TenDanhMuc.Contains("Combo")))))
                                 {
                                     folder = "Setmonan";
                                 }
 
-                                string imgName = !string.IsNullOrEmpty(mon.HinhAnhUrl) ? mon.HinhAnhUrl : "default.jpg";
-                                // ĐƯỜNG DẪN DÙNG /shared/
-                                string imgPath = $"/shared/{folder}/{imgName}";
+                                string imgName = !string.IsNullOrWhiteSpace(mon.HinhAnhUrl) ? mon.HinhAnhUrl : "default.jpg";
+                                string imgPath = $"{baseUrl}/{folder}/{imgName}";
+                                string fallbackPath = $"{baseUrl}/Monan/default.jpg";
                             }
 
                             <img src="@imgPath"
+                                 alt="@mon.TenMon"
                                  style="width:70px;height:70px;border-radius:8px;cursor:pointer;object-fit:cover"
                                  onclick="zoomImage('@imgPath')"
-                                 onerror="this.src='/shared/Monan/default.jpg'" />
+                                 onerror="this.onerror=null;this.src='@fallbackPath'" />
                         </td>
                         <td>@mon.TenMon</td>
                         <td>@String.Format("{0:N0} ₫", mon.DonGia)</td>
                         <td>@mon.DanhMuc?.TenDanhMuc</td>
                         <td>@mon.TrangThai</td>
                         <td>
-                            <a asp-action="Edit" asp-route-id="@mon.MonAnId" class="btn btn-warning btn-sm fw-semibold"><i class="fa-solid fa-pen-to-square"></i></a>
-                            <button type="button" class="btn btn-danger btn-sm fw-semibold" onclick="confirmDelete(@mon.MonAnId)"><i class="fa-solid fa-trash"></i></button>
+                            <a asp-action="Edit" asp-route-id="@mon.MonAnId" class="btn btn-warning btn-sm fw-semibold">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                            <button type="button" class="btn btn-danger btn-sm fw-semibold" onclick="confirmDelete(@mon.MonAnId)">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 }
@@ -102,26 +117,54 @@
 
 @if (TempData["msg"] != null)
 {
-    <script>document.addEventListener("DOMContentLoaded", () => { Swal.fire({ icon: 'success', title: '@TempData["msg"]', showConfirmButton: false, timer: 1600 }); });</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            Swal.fire({
+                icon: 'success',
+                title: '@TempData["msg"]',
+                showConfirmButton: false,
+                timer: 1600
+            });
+        });
+    </script>
 }
 
 <script>
     function confirmDelete(id) {
         Swal.fire({
-            title: 'Xóa món này?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Xóa', cancelButtonText: 'Hủy'
+            title: 'Xóa món này?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
         }).then((result) => {
             if (result.isConfirmed) {
                 fetch('/MonAns/DeleteConfirmed?id=' + id, { method: 'POST' })
                     .then(res => {
-                        if (!res.ok) { Swal.fire("Lỗi", "Không thể xóa", "error"); return; }
+                        if (!res.ok) {
+                            Swal.fire("Lỗi", "Không thể xóa", "error");
+                            return;
+                        }
                         document.getElementById("row-" + id)?.remove();
-                        Swal.fire({ icon: 'success', title: 'Đã xóa!', timer: 1000, showConfirmButton: false });
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Đã xóa!',
+                            timer: 1000,
+                            showConfirmButton: false
+                        });
                     });
             }
         });
     }
+
     function zoomImage(url) {
-        Swal.fire({ imageUrl: url, showConfirmButton: false, background: '#000000d9', width: 500 });
+        Swal.fire({
+            imageUrl: url,
+            showConfirmButton: false,
+            background: '#000000d9',
+            width: 500
+        });
     }
 </script>
 
