@@ -1,40 +1,59 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quanlinhahang.Data.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Quanlinhahang_Admin.Controllers
 {
     public class ThongKeController : Controller
     {
         private readonly QuanLyNhaHangContext _ctx;
-        public ThongKeController(QuanLyNhaHangContext ctx) => _ctx = ctx;
+
+        public ThongKeController(QuanLyNhaHangContext ctx)
+        {
+            _ctx = ctx;
+        }
 
         public IActionResult Index() => View();
 
-        // ============= 1) Doanh thu 12 tháng (Mốc năm 2026 hiện tại) =============
+        // ============= 1) Doanh thu 12 tháng gần nhất =============
         [HttpGet]
         public async Task<IActionResult> RevenueLast12Months()
         {
-            // Cập nhật mốc thời gian sang 2026 cho phù hợp hiện tại
-            var anchorDate = new DateTime(2026, 12, 31);
-            var start = new DateTime(anchorDate.Year, anchorDate.Month, 1).AddMonths(-11);
-
-            var raw = await _ctx.HoaDons
-                .Where(h => h.NgayLap >= start && h.NgayLap <= anchorDate)
+            var paidInvoices = await _ctx.HoaDons
+                .AsNoTracking()
+                .Where(h => h.TrangThaiId == 4 && h.NgayLap.HasValue)
+                .Select(h => new
+                {
+                    NgayLap = h.NgayLap!.Value,
+                    TongTien = h.TongTien ?? 0m
+                })
                 .ToListAsync();
 
-            // Nhóm dữ liệu ở bộ nhớ để xử lý NgayLap nullable dễ dàng hơn
-            var groupedRaw = raw
-                .Where(h => h.NgayLap.HasValue)
-                .GroupBy(h => new { h.NgayLap.Value.Year, h.NgayLap.Value.Month })
-                .Select(g => new {
+            if (!paidInvoices.Any())
+            {
+                var empty = Enumerable.Range(0, 12)
+                    .Select(i => new
+                    {
+                        label = DateTime.UtcNow.AddMonths(i - 11).ToString("MM/yyyy"),
+                        value = 0m
+                    })
+                    .ToList();
+
+                return Json(empty);
+            }
+
+            var anchorDate = paidInvoices.Max(x => x.NgayLap);
+            var start = new DateTime(anchorDate.Year, anchorDate.Month, 1).AddMonths(-11);
+            var end = new DateTime(anchorDate.Year, anchorDate.Month, 1).AddMonths(1).AddTicks(-1);
+
+            var grouped = paidInvoices
+                .Where(x => x.NgayLap >= start && x.NgayLap <= end)
+                .GroupBy(x => new { x.NgayLap.Year, x.NgayLap.Month })
+                .Select(g => new
+                {
                     g.Key.Year,
                     g.Key.Month,
-                    Total = g.Sum(x => x.TongTien ?? 0m)
+                    Total = g.Sum(x => x.TongTien)
                 })
                 .ToList();
 
@@ -42,7 +61,7 @@ namespace Quanlinhahang_Admin.Controllers
                 .Select(i =>
                 {
                     var d = start.AddMonths(i);
-                    var hit = groupedRaw.FirstOrDefault(r => r.Year == d.Year && r.Month == d.Month);
+                    var hit = grouped.FirstOrDefault(r => r.Year == d.Year && r.Month == d.Month);
                     return new
                     {
                         label = d.ToString("MM/yyyy"),
@@ -54,33 +73,56 @@ namespace Quanlinhahang_Admin.Controllers
             return Json(result);
         }
 
-        // ============= 2) Doanh thu theo Quý (Năm 2026) =============
+        // ============= 2) Doanh thu theo Quý và cả năm =============
         [HttpGet]
         public async Task<IActionResult> RevenueQuarterAndYear(int? year)
         {
-            int y = year ?? 2026;
-
-            var raw = await _ctx.HoaDons
-                .Where(h => h.NgayLap.HasValue && h.NgayLap.Value.Year == y)
-                .Select(h => new { h.NgayLap.Value.Month, TongTien = h.TongTien ?? 0m })
+            var paidInvoices = await _ctx.HoaDons
+                .AsNoTracking()
+                .Where(h => h.TrangThaiId == 4 && h.NgayLap.HasValue)
+                .Select(h => new
+                {
+                    NgayLap = h.NgayLap!.Value,
+                    TongTien = h.TongTien ?? 0m
+                })
                 .ToListAsync();
 
-            decimal q1 = raw.Where(x => x.Month <= 3).Sum(x => x.TongTien);
+            int y = year ?? (paidInvoices.Any() ? paidInvoices.Max(x => x.NgayLap.Year) : DateTime.UtcNow.Year);
+
+            var raw = paidInvoices
+                .Where(x => x.NgayLap.Year == y)
+                .Select(x => new
+                {
+                    Month = x.NgayLap.Month,
+                    x.TongTien
+                })
+                .ToList();
+
+            decimal q1 = raw.Where(x => x.Month >= 1 && x.Month <= 3).Sum(x => x.TongTien);
             decimal q2 = raw.Where(x => x.Month >= 4 && x.Month <= 6).Sum(x => x.TongTien);
             decimal q3 = raw.Where(x => x.Month >= 7 && x.Month <= 9).Sum(x => x.TongTien);
-            decimal q4 = raw.Where(x => x.Month >= 10).Sum(x => x.TongTien);
+            decimal q4 = raw.Where(x => x.Month >= 10 && x.Month <= 12).Sum(x => x.TongTien);
 
-            return Json(new { year = y, q1, q2, q3, q4, yearTotal = q1 + q2 + q3 + q4 });
+            return Json(new
+            {
+                year = y,
+                q1,
+                q2,
+                q3,
+                q4,
+                yearTotal = q1 + q2 + q3 + q4
+            });
         }
 
         // ============= 3) Tỷ lệ KH có tài khoản =============
         [HttpGet]
         public async Task<IActionResult> CustomerAccountPercent()
         {
-            var total = await _ctx.KhachHangs.CountAsync();
-            var haveAccount = await _ctx.KhachHangs.CountAsync(k => k.TaiKhoanId != null);
+            var total = await _ctx.KhachHangs.AsNoTracking().CountAsync();
+            var haveAccount = await _ctx.KhachHangs.AsNoTracking().CountAsync(k => k.TaiKhoanId != null);
 
             var percent = total == 0 ? 0 : (double)haveAccount * 100.0 / total;
+
             return Json(new
             {
                 totalKH = total,
@@ -89,12 +131,13 @@ namespace Quanlinhahang_Admin.Controllers
             });
         }
 
-        // ============= 4) Nhân viên xuất sắc nhất (theo số đơn) =============
+        // ============= 4) Nhân viên xuất sắc nhất =============
         [HttpGet]
         public async Task<IActionResult> BestEmployee()
         {
             var bestStats = await _ctx.HoaDons
-                .Where(h => h.TaiKhoanId != null)
+                .AsNoTracking()
+                .Where(h => h.TaiKhoanId != null && h.TrangThaiId == 4)
                 .GroupBy(h => h.TaiKhoanId)
                 .Select(g => new
                 {
@@ -103,24 +146,19 @@ namespace Quanlinhahang_Admin.Controllers
                     CountOrders = g.Count()
                 })
                 .OrderByDescending(x => x.CountOrders)
+                .ThenByDescending(x => x.TotalRevenue)
                 .FirstOrDefaultAsync();
 
             if (bestStats != null)
             {
-                string name = "Không xác định";
-                int? nvID = null;
-
-                var nv = await _ctx.NhanViens.FirstOrDefaultAsync(n => n.TaiKhoanId == bestStats.TaiKhoanID);
-                if (nv != null)
-                {
-                    name = nv.HoTen;
-                    nvID = nv.NhanVienId;
-                }
+                var nv = await _ctx.NhanViens
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(n => n.TaiKhoanId == bestStats.TaiKhoanID);
 
                 return Json(new
                 {
-                    HoTen = name,
-                    NhanVienID = nvID,
+                    HoTen = nv?.HoTen ?? "Không xác định",
+                    NhanVienID = nv?.NhanVienId,
                     bestStats.TotalRevenue,
                     bestStats.CountOrders
                 });
@@ -129,19 +167,20 @@ namespace Quanlinhahang_Admin.Controllers
             return Json(new
             {
                 HoTen = "Chưa có dữ liệu",
-                NhanVienID = "-",
+                NhanVienID = (int?)null,
                 TotalRevenue = 0m,
                 CountOrders = 0
             });
         }
 
-        // ============= 5) Top 3 Khách hàng chi tiêu mạnh nhất =============
+        // ============= 5) Top 3 khách hàng chi tiêu mạnh nhất =============
         [HttpGet]
         public async Task<IActionResult> TopCustomers()
         {
-            var query = from hd in _ctx.HoaDons
-                        join db in _ctx.DatBans on hd.DatBanId equals db.DatBanId
-                        join kh in _ctx.KhachHangs on db.KhachHangId equals kh.KhachHangId
+            var query = from hd in _ctx.HoaDons.AsNoTracking()
+                        join db in _ctx.DatBans.AsNoTracking() on hd.DatBanId equals db.DatBanId
+                        join kh in _ctx.KhachHangs.AsNoTracking() on db.KhachHangId equals kh.KhachHangId
+                        where hd.TrangThaiId == 4
                         group hd by new { kh.KhachHangId, kh.HoTen, kh.SoDienThoai } into g
                         select new
                         {

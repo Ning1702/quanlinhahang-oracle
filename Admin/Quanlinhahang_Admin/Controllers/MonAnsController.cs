@@ -24,31 +24,47 @@ namespace Quanlinhahang_Admin.Controllers
         // ==========================================
         public async Task<IActionResult> Index()
         {
-            // Tên DbSet đã đổi thành MonAns, Navigation property thành DanhMuc (hoặc DanhMucMon tùy bản EF Core sinh ra)
-            var data = _context.MonAns.Include(m => m.DanhMuc);
+            // Load riêng từng bảng để tránh lỗi join/navigation khi mapping PostgreSQL lệch
+            var monAns = await _context.MonAns
+                .AsNoTracking()
+                .OrderByDescending(m => m.MonAnId)
+                .ToListAsync();
 
-            // Load danh sách danh mục để đổ vào ô tìm kiếm
-            ViewBag.DanhMucList = await _context.DanhMucMons.ToListAsync();
-            return View(await data.ToListAsync());
+            var danhMucs = await _context.DanhMucMons
+                .AsNoTracking()
+                .ToListAsync();
+
+            var danhMucMap = danhMucs.ToDictionary(d => d.DanhMucId, d => d);
+
+            foreach (var mon in monAns)
+            {
+                if (danhMucMap.TryGetValue(mon.DanhMucId ?? 0, out var dm))
+                {
+                    mon.DanhMuc = dm;
+                }
+            }
+
+            ViewBag.DanhMucList = danhMucs;
+            return View(monAns);
         }
 
         // ==========================================
-        // 2. CREATE (GET) - Hiển thị form thêm
+        // 2. CREATE (GET)
         // ==========================================
         public IActionResult Create()
         {
-            LoadViewBag(); // 👇 Nạp dữ liệu cho Dropdown
+            LoadViewBag();
             return View();
         }
 
         // ==========================================
-        // 3. CREATE (POST) - Xử lý thêm
+        // 3. CREATE (POST)
         // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(MonAn monAn, IFormFile fHinhAnh)
+        public async Task<IActionResult> Create(MonAn monAn, IFormFile? fHinhAnh)
         {
-            ModelState.Remove("DanhMuc"); // Loại bỏ Navigation Property để pass Validation
+            ModelState.Remove("DanhMuc");
 
             if (ModelState.IsValid)
             {
@@ -57,13 +73,15 @@ namespace Quanlinhahang_Admin.Controllers
                     monAn.HinhAnhUrl = await _storageService.SaveFileAsync(fHinhAnh);
                 }
 
-                if (string.IsNullOrEmpty(monAn.HinhAnhUrl))
+                if (string.IsNullOrWhiteSpace(monAn.HinhAnhUrl))
                 {
                     monAn.HinhAnhUrl = "default.jpg";
                 }
 
-                _context.Add(monAn);
+                _context.MonAns.Add(monAn);
                 await _context.SaveChangesAsync();
+
+                TempData["msg"] = "Thêm món ăn thành công!";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -72,14 +90,14 @@ namespace Quanlinhahang_Admin.Controllers
         }
 
         // ==========================================
-        // 4. EDIT (GET) - Hiển thị form sửa
+        // 4. EDIT (GET)
         // ==========================================
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
             var monAn = await _context.MonAns
-                .Include(m => m.DanhMuc)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.MonAnId == id);
 
             if (monAn == null) return NotFound();
@@ -89,7 +107,7 @@ namespace Quanlinhahang_Admin.Controllers
         }
 
         // ==========================================
-        // 5. EDIT (POST) - Xử lý sửa 
+        // 5. EDIT (POST)
         // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -100,13 +118,12 @@ namespace Quanlinhahang_Admin.Controllers
             ModelState.Remove("DanhMuc");
             ModelState.Remove("HinhAnhUrl");
             ModelState.Remove("LoaiMon");
-            // Đã xóa ModelState.Remove("Ngaytao") vì schema mới không có cột này trong MonAn
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    var existingMon = await _context.MonAns.FindAsync(id);
+                    var existingMon = await _context.MonAns.FirstOrDefaultAsync(x => x.MonAnId == id);
                     if (existingMon == null) return NotFound();
 
                     existingMon.TenMon = monAn.TenMon;
@@ -117,7 +134,7 @@ namespace Quanlinhahang_Admin.Controllers
 
                     if (fHinhAnh != null)
                     {
-                        if (!string.IsNullOrEmpty(existingMon.HinhAnhUrl) && existingMon.HinhAnhUrl != "default.jpg")
+                        if (!string.IsNullOrWhiteSpace(existingMon.HinhAnhUrl) && existingMon.HinhAnhUrl != "default.jpg")
                         {
                             await _storageService.DeleteFileAsync(existingMon.HinhAnhUrl);
                         }
@@ -125,17 +142,21 @@ namespace Quanlinhahang_Admin.Controllers
                         existingMon.HinhAnhUrl = await _storageService.SaveFileAsync(fHinhAnh);
                     }
 
+                    if (string.IsNullOrWhiteSpace(existingMon.HinhAnhUrl))
+                    {
+                        existingMon.HinhAnhUrl = "default.jpg";
+                    }
+
                     await _context.SaveChangesAsync();
-                    TempData["msg"] = "Cập nhật thành công!";
+                    TempData["msg"] = "Cập nhật món ăn thành công!";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    ModelState.AddModelError("", "Lỗi lưu: " + ex.Message);
+                    ModelState.AddModelError("", "Lỗi lưu dữ liệu: " + ex.Message);
                 }
             }
 
-            // Nếu thất bại, nạp lại Dropdown để hiện Form
             LoadViewBag(monAn.DanhMucId, monAn.TrangThai);
             return View(monAn);
         }
@@ -146,32 +167,39 @@ namespace Quanlinhahang_Admin.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var mon = await _context.MonAns.FindAsync(id);
+            var mon = await _context.MonAns.FirstOrDefaultAsync(x => x.MonAnId == id);
             if (mon == null) return NotFound();
 
-            // Kiểm tra và xóa dữ liệu liên kết ở ChiTietHoaDon
-            var ct = await _context.ChiTietHoaDons.Where(x => x.MonAnId == id).ToListAsync();
+            var ct = await _context.ChiTietHoaDons
+                .Where(x => x.MonAnId == id)
+                .ToListAsync();
+
             if (ct.Any())
             {
                 _context.ChiTietHoaDons.RemoveRange(ct);
             }
 
-            if (!string.IsNullOrEmpty(mon.HinhAnhUrl) && mon.HinhAnhUrl != "default.jpg")
+            if (!string.IsNullOrWhiteSpace(mon.HinhAnhUrl) && mon.HinhAnhUrl != "default.jpg")
             {
                 await _storageService.DeleteFileAsync(mon.HinhAnhUrl);
             }
 
             _context.MonAns.Remove(mon);
             await _context.SaveChangesAsync();
+
             return Ok(new { message = "success" });
         }
 
         private bool MonAnExists(int id) => _context.MonAns.Any(e => e.MonAnId == id);
 
-        private void LoadViewBag(object selectedDanhmuc = null, object selectedTrangThai = null)
+        private void LoadViewBag(object? selectedDanhmuc = null, object? selectedTrangThai = null)
         {
-            // Đã cập nhật thành DanhMucId và TenDanhMuc
-            ViewData["DanhMucID"] = new SelectList(_context.DanhMucMons, "DanhMucId", "TenDanhMuc", selectedDanhmuc);
+            ViewData["DanhMucID"] = new SelectList(
+                _context.DanhMucMons.AsNoTracking().ToList(),
+                "DanhMucId",
+                "TenDanhMuc",
+                selectedDanhmuc
+            );
 
             var statusList = new List<string> { "Đang phục vụ", "Ngừng phục vụ", "Hết hàng" };
             ViewBag.TrangThaiList = new SelectList(statusList, selectedTrangThai);
