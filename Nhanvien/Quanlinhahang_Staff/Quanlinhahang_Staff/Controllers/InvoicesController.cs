@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Quanlinhahang.Data.Models;
 using Quanlinhahang_Staff.Hubs;
 using Quanlinhahang_Staff.Models.ViewModels;
-using System;
 using System.Text.Json;
 
 namespace Quanlinhahang_Staff.Controllers
@@ -26,6 +25,7 @@ namespace Quanlinhahang_Staff.Controllers
         public async Task<IActionResult> Index([FromQuery] InvoiceFilterVM f, [FromQuery] int status = 0)
         {
             if (!IsLoggedIn) return RequireLogin();
+
             ViewBag.Status = status;
             ViewBag.Filter = f;
 
@@ -44,52 +44,57 @@ namespace Quanlinhahang_Staff.Controllers
             {
                 string s = f.Search.Trim().ToLower();
                 query = query.Where(h =>
-                    (h.DatBan != null && h.DatBan.KhachHang != null && h.DatBan.KhachHang.HoTen.ToLower().Contains(s)) ||
+                    (h.DatBan != null && h.DatBan.KhachHang != null && h.DatBan.KhachHang.HoTen != null && h.DatBan.KhachHang.HoTen.ToLower().Contains(s)) ||
                     (h.DatBan != null && h.DatBan.KhachHang != null && (h.DatBan.KhachHang.SoDienThoai ?? "").Contains(s)));
             }
 
             if (f.From.HasValue)
-                query = query.Where(h => h.NgayLap != null && h.NgayLap.Value.Date >= f.From.Value.Date);
+            {
+                var fromDate = f.From.Value.Date;
+                query = query.Where(h => h.NgayLap.HasValue && h.NgayLap.Value.Date >= fromDate);
+            }
 
             if (f.To.HasValue)
-                query = query.Where(h => h.NgayLap != null && h.NgayLap.Value.Date <= f.To.Value.Date);
-
-            var projectedData = query.Select(h => new
             {
-                HoaDon = h,
-                SubTotal = h.ChiTietHoaDons.Sum(ct => ct.ThanhTien ?? 0m)
-            })
-            .Select(x => new InvoiceRowVM
+                var toDate = f.To.Value.Date;
+                query = query.Where(h => h.NgayLap.HasValue && h.NgayLap.Value.Date <= toDate);
+            }
+
+            // Lấy dữ liệu thô từ DB trước
+            var rawList = await query
+                .OrderByDescending(h => h.HoaDonId)
+                .ToListAsync();
+
+            // Sau đó mới map sang ViewModel trong bộ nhớ để tránh lỗi translate của EF/PostgreSQL
+            var list = rawList.Select(h =>
             {
-                HoaDonID = x.HoaDon.HoaDonId,
+                decimal subTotal = h.ChiTietHoaDons?.Sum(ct => ct.ThanhTien ?? 0m) ?? 0m;
+                decimal vatPercent = h.Vatpercent ?? 10m;
+                decimal thanhTien = subTotal * (1 + vatPercent / 100m);
 
-                // LỖI DÒNG 60: Xử lý null cho DateTime
-                NgayLap = x.HoaDon.NgayLap ?? DateTime.Now,
+                return new InvoiceRowVM
+                {
+                    HoaDonID = h.HoaDonId,
+                    NgayLap = h.NgayLap ?? DateTime.Now,
+                    NgayDen = (h.DatBan != null && h.DatBan.NgayDen.HasValue)
+                        ? h.DatBan.NgayDen.Value.ToDateTime(TimeOnly.MinValue)
+                        : DateTime.MinValue,
+                    KhungGio = h.DatBan?.KhungGio?.TenKhungGio ?? "---",
+                    KhachHang = h.DatBan?.KhachHang?.HoTen ?? "Khách vãng lai",
+                    SoDienThoai = h.DatBan?.KhachHang?.SoDienThoai ?? "",
+                    BanPhong = h.DatBan?.BanPhong?.TenBanPhong ?? "",
+                    LoaiBanPhong = h.DatBan?.BanPhong?.LoaiBanPhong?.TenLoai ?? "",
+                    ThanhTien = thanhTien,
+                    TrangThaiID = h.TrangThaiId ?? 0,
+                    TrangThaiTen = h.TrangThai?.TenTrangThai ?? "Không xác định"
+                };
+            }).ToList();
 
-                // LỖI DÒNG 61: Convert từ DateOnly? sang DateTime
-                NgayDen = (x.HoaDon.DatBan != null && x.HoaDon.DatBan.NgayDen.HasValue)
-                            ? x.HoaDon.DatBan.NgayDen.Value.ToDateTime(TimeOnly.MinValue)
-                            : DateTime.MinValue,
-
-                KhungGio = (x.HoaDon.DatBan != null && x.HoaDon.DatBan.KhungGio != null) ? x.HoaDon.DatBan.KhungGio.TenKhungGio : "---",
-                KhachHang = (x.HoaDon.DatBan != null && x.HoaDon.DatBan.KhachHang != null) ? x.HoaDon.DatBan.KhachHang.HoTen : "Khách vãng lai",
-                SoDienThoai = (x.HoaDon.DatBan != null && x.HoaDon.DatBan.KhachHang != null) ? x.HoaDon.DatBan.KhachHang.SoDienThoai : "",
-                BanPhong = (x.HoaDon.DatBan != null && x.HoaDon.DatBan.BanPhong != null) ? x.HoaDon.DatBan.BanPhong.TenBanPhong : "",
-                LoaiBanPhong = (x.HoaDon.DatBan != null && x.HoaDon.DatBan.BanPhong != null && x.HoaDon.DatBan.BanPhong.LoaiBanPhong != null) ? x.HoaDon.DatBan.BanPhong.LoaiBanPhong.TenLoai : "",
-                ThanhTien = x.SubTotal * (1 + ((x.HoaDon.Vatpercent ?? 10m) / 100m)),
-
-                // LỖI DÒNG 72: Xử lý null cho kiểu int
-                TrangThaiID = x.HoaDon.TrangThaiId ?? 0,
-
-                TrangThaiTen = x.HoaDon.TrangThai != null ? x.HoaDon.TrangThai.TenTrangThai : "Không xác định"
-            });
-
-            var list = await projectedData.OrderByDescending(x => x.HoaDonID).ToListAsync();
             return View(list);
         }
 
         // ==============================
-        // CÁC HÀM XỬ LÝ TRẠNG THÁI (Giữ nguyên)
+        // CÁC HÀM XỬ LÝ TRẠNG THÁI
         // ==============================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -106,7 +111,10 @@ namespace Quanlinhahang_Staff.Controllers
                 await _db.SaveChangesAsync();
                 TempData["msg"] = $"✅ Đã xác nhận hóa đơn #{id}.";
             }
-            else TempData["msg"] = "⚠️ Không thể xác nhận hóa đơn này.";
+            else
+            {
+                TempData["msg"] = "⚠️ Không thể xác nhận hóa đơn này.";
+            }
 
             return RedirectToAction(nameof(Index), new { status });
         }
@@ -124,7 +132,10 @@ namespace Quanlinhahang_Staff.Controllers
                 await _db.SaveChangesAsync();
                 TempData["msg"] = "✅ Đã chuyển sang trạng thái đang phục vụ.";
             }
-            else TempData["msg"] = "⚠️ Hóa đơn chưa được xác nhận hoặc trạng thái không hợp lệ.";
+            else
+            {
+                TempData["msg"] = "⚠️ Hóa đơn chưa được xác nhận hoặc trạng thái không hợp lệ.";
+            }
 
             return RedirectToAction(nameof(Index), new { status });
         }
@@ -133,7 +144,10 @@ namespace Quanlinhahang_Staff.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ThanhToan(int id, int status)
         {
-            var hd = await _db.HoaDons.Include(h => h.ChiTietHoaDons).FirstOrDefaultAsync(h => h.HoaDonId == id);
+            var hd = await _db.HoaDons
+                .Include(h => h.ChiTietHoaDons)
+                .FirstOrDefaultAsync(h => h.HoaDonId == id);
+
             if (hd == null) return NotFound();
 
             if (hd.TrangThaiId == 3)
@@ -143,7 +157,10 @@ namespace Quanlinhahang_Staff.Controllers
                 await _db.SaveChangesAsync();
                 TempData["msg"] = "💰 Đã thanh toán thành công.";
             }
-            else TempData["msg"] = "⚠️ Chỉ có thể thanh toán hóa đơn đang phục vụ.";
+            else
+            {
+                TempData["msg"] = "⚠️ Chỉ có thể thanh toán hóa đơn đang phục vụ.";
+            }
 
             return RedirectToAction(nameof(Index), new { status });
         }
@@ -163,10 +180,14 @@ namespace Quanlinhahang_Staff.Controllers
                     var db = await _db.DatBans.FindAsync(hd.DatBanId.Value);
                     if (db != null) db.TrangThaiId = 5;
                 }
+
                 await _db.SaveChangesAsync();
                 TempData["msg"] = "🗑 Hóa đơn đã bị hủy.";
             }
-            else TempData["msg"] = "⚠️ Không thể hủy hóa đơn đã thanh toán.";
+            else
+            {
+                TempData["msg"] = "⚠️ Không thể hủy hóa đơn đã thanh toán.";
+            }
 
             return RedirectToAction(nameof(Index), new { status });
         }
@@ -174,12 +195,21 @@ namespace Quanlinhahang_Staff.Controllers
         public async Task<IActionResult> Create(int? datBanId)
         {
             if (datBanId == null) return BadRequest("Thiếu DatBanID");
+
             var datBan = await _db.DatBans.FindAsync(datBanId);
             if (datBan == null) return NotFound();
 
-            var hd = new HoaDon { DatBanId = datBan.DatBanId, NgayLap = DateTime.Now, TongTien = 0, TrangThaiId = 1 };
+            var hd = new HoaDon
+            {
+                DatBanId = datBan.DatBanId,
+                NgayLap = DateTime.Now,
+                TongTien = 0,
+                TrangThaiId = 1
+            };
+
             _db.HoaDons.Add(hd);
             await _db.SaveChangesAsync();
+
             return RedirectToAction(nameof(Edit), new { id = hd.HoaDonId });
         }
 
@@ -203,13 +233,10 @@ namespace Quanlinhahang_Staff.Controllers
             {
                 HoaDonID = hd.HoaDonId,
                 DatBanID = hd.DatBanId ?? 0,
-
                 BanPhongID = hd.DatBan != null ? (hd.DatBan.BanPhongId ?? 0) : 0,
-
                 TrangThai = hd.TrangThai != null ? hd.TrangThai.TenTrangThai : "N/A",
                 Items = hd.ChiTietHoaDons.Select(ct => new InvoiceEditVM.ItemLine
                 {
-                    // LỖI DÒNG 229: Ép kiểu int và decimal chống null
                     MonAnID = ct.MonAnId,
                     TenMon = ct.MonAn != null ? ct.MonAn.TenMon : "Món đã xóa",
                     SoLuong = ct.SoLuong ?? 1,
@@ -255,18 +282,26 @@ namespace Quanlinhahang_Staff.Controllers
             if (hd.DatBan != null)
             {
                 hd.DatBan.BanPhongId = vm.BanPhongID == 0 ? null : vm.BanPhongID;
+
                 if (NewNgayDen.HasValue)
                 {
-                    // LỖI DÒNG 280: Convert từ DateTime sang DateOnly
                     hd.DatBan.NgayDen = DateOnly.FromDateTime(NewNgayDen.Value);
                 }
-                if (NewKhungGioID.HasValue) hd.DatBan.KhungGioId = NewKhungGioID.Value;
+
+                if (NewKhungGioID.HasValue)
+                {
+                    hd.DatBan.KhungGioId = NewKhungGioID.Value;
+                }
             }
 
             if (!string.IsNullOrEmpty(ItemsJson))
             {
                 var items = JsonSerializer.Deserialize<List<InvoiceEditVM.ItemLine>>(ItemsJson);
-                foreach (var old in hd.ChiTietHoaDons.ToList()) { _db.ChiTietHoaDons.Remove(old); }
+
+                foreach (var old in hd.ChiTietHoaDons.ToList())
+                {
+                    _db.ChiTietHoaDons.Remove(old);
+                }
 
                 if (items != null)
                 {
@@ -297,11 +332,13 @@ namespace Quanlinhahang_Staff.Controllers
         [HttpGet]
         public IActionResult GetBanPhong(int hoaDonId)
         {
-            var currentHD = _db.HoaDons.Include(h => h.DatBan).FirstOrDefault(h => h.HoaDonId == hoaDonId);
+            var currentHD = _db.HoaDons
+                .Include(h => h.DatBan)
+                .FirstOrDefault(h => h.HoaDonId == hoaDonId);
+
             if (currentHD == null || currentHD.DatBan == null || currentHD.DatBan.NgayDen == null)
                 return BadRequest("Lỗi dữ liệu đặt bàn.");
 
-            // LỖI DÒNG 325 & 332: DateOnly không có thuộc tính .Date, ta lấy luôn .Value
             var checkDate = currentHD.DatBan.NgayDen.Value;
             var checkSlot = currentHD.DatBan.KhungGioId;
 
@@ -309,10 +346,11 @@ namespace Quanlinhahang_Staff.Controllers
                 .Include(h => h.DatBan)
                 .Where(h => h.TrangThaiId != 4 && h.TrangThaiId != 5)
                 .Where(h => h.HoaDonId != hoaDonId)
-
-                // So sánh thẳng value của DateOnly
-                .Where(h => h.DatBan != null && h.DatBan.NgayDen != null && h.DatBan.NgayDen.Value == checkDate && h.DatBan.KhungGioId == checkSlot)
-                .Select(h => h.DatBan.BanPhongId)
+                .Where(h => h.DatBan != null
+                            && h.DatBan.NgayDen != null
+                            && h.DatBan.NgayDen.Value == checkDate
+                            && h.DatBan.KhungGioId == checkSlot)
+                .Select(h => h.DatBan!.BanPhongId)
                 .Where(id => id != null)
                 .Distinct()
                 .ToList();
@@ -389,7 +427,6 @@ namespace Quanlinhahang_Staff.Controllers
                 NgayDen = DateTime.Now
             };
 
-            // Tự động chọn Sáng/Trưa/Tối dựa theo giờ hiện tại
             int hour = DateTime.Now.Hour;
             string tenKhungGio = hour < 15 ? "Trưa" : "Tối";
             var kg = await _db.KhungGios.FirstOrDefaultAsync(k => k.TenKhungGio == tenKhungGio);
@@ -400,6 +437,7 @@ namespace Quanlinhahang_Staff.Controllers
 
             return View(vm);
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateWalkIn(InvoiceCreateVM vm)
@@ -411,7 +449,6 @@ namespace Quanlinhahang_Staff.Controllers
                 return View(vm);
             }
 
-            // 1. Tạo Đặt bàn (Trạng thái 3: Đang phục vụ)
             var datBan = new DatBan
             {
                 KhachHangId = vm.KhachHangID,
@@ -426,7 +463,6 @@ namespace Quanlinhahang_Staff.Controllers
             _db.DatBans.Add(datBan);
             await _db.SaveChangesAsync();
 
-            // 2. Tạo Hóa đơn đi kèm
             var hd = new HoaDon
             {
                 DatBanId = datBan.DatBanId,
@@ -442,7 +478,6 @@ namespace Quanlinhahang_Staff.Controllers
             _db.HoaDons.Add(hd);
             await _db.SaveChangesAsync();
 
-            // 3. Đẩy sang trang Edit để thêm món ăn
             TempData["msg"] = "📝 Đã tạo đơn thành công. Vui lòng thêm món ăn!";
             return RedirectToAction(nameof(Edit), new { id = hd.HoaDonId, status = 3 });
         }
@@ -451,7 +486,6 @@ namespace Quanlinhahang_Staff.Controllers
         [Route("api/NotifyNewBooking")]
         public async Task<IActionResult> NotifyNewBooking(string tenKhach, string soDienThoai)
         {
-            // Khi API này được gọi, nó sẽ rống lên qua ống SignalR báo cho tất cả màn hình nhân viên
             await _hubContext.Clients.All.SendAsync("ReceiveNewBooking", tenKhach, soDienThoai);
             return Ok();
         }
