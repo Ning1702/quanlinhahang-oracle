@@ -20,7 +20,6 @@ namespace Quanlinhahang_Admin.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Vòng lặp chạy liên tục cho đến khi tắt ứng dụng
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -29,14 +28,12 @@ namespace Quanlinhahang_Admin.Services
                     {
                         var _context = scope.ServiceProvider.GetRequiredService<QuanLyNhaHangContext>();
 
-                        // Cài đặt thời gian mốc: Trước thời điểm hiện tại 10 phút
-                        // 💡 MẸO: Trong lúc test, bạn có thể đổi -10 thành -1 (1 phút) để đỡ phải chờ lâu
-                        var timeoutLimit = DateTime.Now.AddMinutes(-10);
+                        // Dùng UTC để tương thích với PostgreSQL timestamp with time zone
+                        var timeoutLimit = DateTime.UtcNow.AddMinutes(-10);
 
-                        // Tìm các đơn Đặt bàn chưa xác nhận (TrangThaiId = 1) và đã quá hạn
                         var expiredBookings = await _context.DatBans
                             .Include(d => d.BanPhong)
-                            .Include(d => d.HoaDon) // Kéo theo cả Hóa đơn để xử lý
+                            .Include(d => d.HoaDon)
                             .Where(d => d.TrangThaiId == 1
                                      && d.ThoiGianTaoDon != null
                                      && d.ThoiGianTaoDon < timeoutLimit)
@@ -44,23 +41,19 @@ namespace Quanlinhahang_Admin.Services
 
                         foreach (var booking in expiredBookings)
                         {
-                            // 1. Chuyển trạng thái Đặt bàn thành Đã hủy (5)
                             booking.TrangThaiId = 5;
 
-                            // 2. Chuyển trạng thái Hóa đơn thành Đã hủy (5)
                             if (booking.HoaDon != null)
                             {
                                 booking.HoaDon.TrangThaiId = 5;
                             }
 
-                            // 3. Giải phóng bàn phòng về trạng thái Trống (0)
                             if (booking.BanPhong != null)
                             {
                                 booking.BanPhong.TrangThaiId = 0;
                             }
                         }
 
-                        // Lưu thay đổi vào DB nếu có đơn bị hủy
                         if (expiredBookings.Any())
                         {
                             await _context.SaveChangesAsync(stoppingToken);
@@ -69,11 +62,9 @@ namespace Quanlinhahang_Admin.Services
                 }
                 catch (Exception ex)
                 {
-                    // Tránh việc lỗi kết nối DB làm chết dịch vụ ngầm
                     Console.WriteLine($"[Lỗi BookingTimeoutService]: {ex.Message}");
                 }
 
-                // Nghỉ 1 phút rồi mới quét DB tiếp (Giúp giảm tải cho Server)
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
         }
