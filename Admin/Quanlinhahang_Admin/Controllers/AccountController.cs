@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Quanlinhahang.Data.Models;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Quanlinhahang.Data.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace Quanlinhahang_Admin.Controllers
 {
@@ -23,18 +23,18 @@ namespace Quanlinhahang_Admin.Controllers
         [HttpGet]
         public IActionResult Login()
         {
-            // Nếu đã đăng nhập thì đẩy về Home luôn
             if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index", "Home");
             }
+
             return View();
         }
 
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
         {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 ViewBag.Error = "Vui lòng nhập tên đăng nhập và mật khẩu!";
                 return View();
@@ -42,7 +42,6 @@ namespace Quanlinhahang_Admin.Controllers
 
             string inputHash = GetSHA256(password);
 
-            // Cập nhật: PascalCase cho các thuộc tính TaiKhoans
             var user = await _context.TaiKhoans
                 .FirstOrDefaultAsync(t => t.TenDangNhap == username && t.MatKhauHash == inputHash);
 
@@ -52,19 +51,23 @@ namespace Quanlinhahang_Admin.Controllers
                 return View();
             }
 
-            // ============================================================
-            // KIỂM TRA QUYỀN TRUY CẬP (Dựa trên chuỗi trong SQL Server)
-            // ============================================================
-            string dbRoleRaw = user.VaiTro ?? "";
-            string finalRole = "";
+            if (!string.IsNullOrWhiteSpace(user.TrangThai) &&
+                !user.TrangThai.Equals("Hoạt động", StringComparison.OrdinalIgnoreCase))
+            {
+                ViewBag.Error = "Tài khoản của bạn hiện không hoạt động!";
+                return View();
+            }
 
-            // Kiểm tra nếu là Admin hoặc Quản lý
-            if (dbRoleRaw.Contains("Admin") || dbRoleRaw.Contains("Quản lý"))
+            string dbRoleRaw = user.VaiTro ?? string.Empty;
+            string finalRole;
+
+            if (dbRoleRaw.Contains("Admin", StringComparison.OrdinalIgnoreCase) ||
+                dbRoleRaw.Contains("Quản lý", StringComparison.OrdinalIgnoreCase))
             {
                 finalRole = "Admin";
             }
-            // Kiểm tra nếu là Nhân viên/Staff
-            else if (dbRoleRaw.Contains("Staff") || dbRoleRaw.Contains("Nhân viên"))
+            else if (dbRoleRaw.Contains("Staff", StringComparison.OrdinalIgnoreCase) ||
+                     dbRoleRaw.Contains("Nhân viên", StringComparison.OrdinalIgnoreCase))
             {
                 finalRole = "Staff";
             }
@@ -76,7 +79,7 @@ namespace Quanlinhahang_Admin.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.TenDangNhap),
+                new Claim(ClaimTypes.Name, user.TenDangNhap ?? string.Empty),
                 new Claim("UserId", user.TaiKhoanId.ToString()),
                 new Claim(ClaimTypes.Role, finalRole)
             };
@@ -84,28 +87,26 @@ namespace Quanlinhahang_Admin.Controllers
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
 
-            // Thiết lập Cookie đăng nhập
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal);
 
-            // ============================================================
-            // ĐIỀU HƯỚNG DỰA TRÊN ROLE
-            // ============================================================
             if (finalRole == "Admin")
             {
-                // Admin ở lại trang quản trị hiện tại
                 return RedirectToAction("Index", "Home");
             }
-            else if (finalRole == "Staff")
-            {
-                // Staff chuyển sang dự án Staff chuyên dụng (StaffUrl cấu hình trong appsettings.json)
-                string staffBaseUrl = _configuration["AppUrls:StaffUrl"];
 
-                if (string.IsNullOrEmpty(staffBaseUrl))
+            if (finalRole == "Staff")
+            {
+                string staffBaseUrl = _configuration["AppUrls:StaffUrl"] ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(staffBaseUrl))
                 {
-                    staffBaseUrl = "https://localhost:7163"; // Port mặc định dự án Staff của bạn
+                    staffBaseUrl = "https://quanlinhahang-staff.onrender.com";
                 }
 
-                // Redirect sang link xác thực trung gian giữa Admin và Staff
+                staffBaseUrl = staffBaseUrl.TrimEnd('/');
+
                 string redirectUrl = $"{staffBaseUrl}/Auth/FromAdmin?userId={user.TaiKhoanId}";
                 return Redirect(redirectUrl);
             }
@@ -120,10 +121,17 @@ namespace Quanlinhahang_Admin.Controllers
             return RedirectToAction("Login");
         }
 
-        // Hàm băm mật khẩu SHA256 đồng bộ toàn hệ thống
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            ViewBag.Message = "Bạn không có quyền truy cập vào trang này!";
+            return View();
+        }
+
         public static string GetSHA256(string str)
         {
             if (string.IsNullOrEmpty(str)) return "";
+
             using (SHA256 sha256 = SHA256.Create())
             {
                 byte[] fromData = Encoding.UTF8.GetBytes(str);
