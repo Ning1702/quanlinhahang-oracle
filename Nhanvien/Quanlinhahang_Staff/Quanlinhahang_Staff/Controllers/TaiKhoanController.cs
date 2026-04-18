@@ -20,15 +20,12 @@ namespace Quanlinhahang_Staff.Controllers
             _env = env;
         }
 
-        // ============================================================
-        // 1. HIỂN THỊ THÔNG TIN TÀI KHOẢN NHÂN VIÊN
-        // ============================================================
         public async Task<IActionResult> Index()
         {
             int? userId = HttpContext.Session.GetInt32("UserId");
 
             if (userId == null)
-                return RedirectToAction("Login", "Auth");
+                return Redirect("https://quanlinhahang-admin.onrender.com/Account/Login");
 
             var info = await (
                 from nv in _context.NhanViens
@@ -40,17 +37,13 @@ namespace Quanlinhahang_Staff.Controllers
                     HoTen = nv.HoTen,
                     SoDienThoai = nv.SoDienThoai,
                     ChucVu = nv.ChucVu,
-
                     NgayVaoLam = nv.NgayVaoLam.HasValue
                         ? nv.NgayVaoLam.Value.ToDateTime(TimeOnly.MinValue)
                         : null,
-
                     TrangThaiNV = nv.TrangThai,
-
                     TaiKhoanID = tk.TaiKhoanId,
                     TenDangNhap = tk.TenDangNhap,
                     Email = tk.Email,
-
                     VaiTro = tk.VaiTro,
                     TrangThaiTK = tk.TrangThai,
                     MatKhauHash = tk.MatKhauHash
@@ -63,9 +56,6 @@ namespace Quanlinhahang_Staff.Controllers
             return View(info);
         }
 
-        // ============================================================
-        // 2. CẬP NHẬT THÔNG TIN (GỘP CẢ ĐỔI MẬT KHẨU)
-        // ============================================================
         [HttpPost]
         public async Task<IActionResult> CapNhat(TaiKhoanStaffVM model, string NewPassword)
         {
@@ -94,9 +84,6 @@ namespace Quanlinhahang_Staff.Controllers
             return RedirectToAction("Index");
         }
 
-        // ============================================================
-        // 3. HÀM MÃ HÓA SHA256 (Helper)
-        // ============================================================
         private string GetSHA256(string str)
         {
             if (string.IsNullOrEmpty(str)) return "";
@@ -109,13 +96,12 @@ namespace Quanlinhahang_Staff.Controllers
             }
         }
 
-        // ======================== LOGOUT ========================
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             HttpContext.Session.Clear();
 
-            return RedirectToAction("Login", "Auth");
+            return Redirect("https://quanlinhahang-admin.onrender.com/Account/Login");
         }
 
         [HttpGet]

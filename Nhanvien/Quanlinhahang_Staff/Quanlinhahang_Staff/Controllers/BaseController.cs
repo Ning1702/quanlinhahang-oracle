@@ -12,7 +12,7 @@ namespace Quanlinhahang_Staff.Controllers
 
         protected IActionResult RequireLogin()
         {
-            return RedirectToAction("Login", "Auth");
+            return Redirect("https://quanlinhahang-admin.onrender.com/Account/Login");
         }
     }
 }
