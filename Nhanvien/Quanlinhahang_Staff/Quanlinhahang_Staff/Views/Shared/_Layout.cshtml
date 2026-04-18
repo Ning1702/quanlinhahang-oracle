@@ -1,4 +1,5 @@
-﻿@* ============================================
+﻿@inject IConfiguration Configuration
+@* ============================================
    _Layout.cshtml - LIGHT & GOLD THEME (Giao diện sáng)
    ============================================ *@
 <!DOCTYPE html>
@@ -15,15 +16,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
+    @{
+        var baseUrl = Configuration["SupabaseStorage:BaseUrl"]
+        ?? "https://wmvatmemmvayfojzhshv.supabase.co/storage/v1/object/public/SharedImages";
+        var logoUrl = $"{baseUrl.TrimEnd('/')}/Logo/logoChu.png";
+        var fallbackLogoUrl = $"{baseUrl.TrimEnd('/')}/Monan/default.jpg";
+    }
+
     <style>
-        /* --- ĐỊNH NGHĨA BIẾN MÀU CHO GIAO DIỆN SÁNG --- */
         :root {
-            --main-bg-color: #f4f6f9; /* Nền trang xám rất nhạt, dịu mắt */
-            --accent-color: #c7a368; /* Giữ nguyên màu vàng gold thương hiệu */
-            --text-color-primary: #333333; /* Chữ xám đậm/đen */
-            --sidebar-bg: #ffffff; /* Nền sidebar trắng */
-            --input-bg: #ffffff; /* Nền ô input trắng */
-            --border-color: #dee2e6; /* Màu viền chuẩn của Bootstrap */
+            --main-bg-color: #f4f6f9;
+            --accent-color: #c7a368;
+            --text-color-primary: #333333;
+            --sidebar-bg: #ffffff;
+            --input-bg: #ffffff;
+            --border-color: #dee2e6;
         }
 
         body {
@@ -33,7 +40,6 @@
             color: var(--text-color-primary);
         }
 
-        /* --- BẢNG DỮ LIỆU (TABLE) --- */
         .table {
             color: var(--text-color-primary) !important;
             border-color: var(--border-color) !important;
@@ -41,7 +47,6 @@
             background-color: #ffffff;
         }
 
-            /* Tiêu đề bảng: Nền trắng/xám nhạt, viền dưới màu vàng gold làm điểm nhấn */
             .table thead th {
                 background-color: #ffffff !important;
                 color: #000000 !important;
@@ -57,10 +62,9 @@
             }
 
         .table-hover tbody tr:hover {
-            background-color: #f8f9fa !important; /* Xám nhạt khi di chuột */
+            background-color: #f8f9fa !important;
         }
 
-        /* Xử lý phần tổng tiền cuối bảng (tfoot) */
         .table tfoot th,
         .table tfoot td {
             background-color: #f8f9fa !important;
@@ -71,23 +75,21 @@
         .table tfoot tr:last-child td {
             font-weight: bold;
             font-size: 1.1em;
-            color: #d9434e !important; /* Cho số tổng tiền màu đỏ/cam cho nổi bật trên nền sáng */
+            color: #d9434e !important;
         }
 
-        /* --- SIDEBAR --- */
         #sidebar-wrapper .list-group-item {
             background-color: transparent;
-            color: #555555 !important; /* Chữ xám */
+            color: #555555 !important;
             border: none;
             font-weight: 500;
         }
 
             #sidebar-wrapper .list-group-item i {
-                color: #888888 !important; /* Icon xám nhạt hơn chút */
+                color: #888888 !important;
                 margin-right: 10px;
             }
 
-            /* Khi di chuột vào thì nổi nền xám nhạt, chữ Vàng */
             #sidebar-wrapper .list-group-item:hover {
                 background-color: #f8f9fa;
                 color: var(--accent-color) !important;
@@ -97,7 +99,6 @@
                     color: var(--accent-color) !important;
                 }
 
-        /* --- CÁC PHẦN KHÁC (TAB, INPUT, BUTTON...) --- */
         .nav-tabs, .nav-pills {
             border-bottom: 1px solid var(--border-color) !important;
         }
@@ -113,14 +114,14 @@
 
             .nav-link.active {
                 background-color: #ffffff !important;
-                color: var(--accent-color) !important; /* Tab đang chọn có chữ vàng */
+                color: var(--accent-color) !important;
                 border-color: var(--border-color) var(--border-color) #ffffff !important;
-                border-bottom: 2px solid var(--accent-color) !important; /* Gạch chân vàng */
+                border-bottom: 2px solid var(--accent-color) !important;
                 font-weight: bold;
             }
 
         h1, h2, h3, h4, h5, h6, .sidebar-heading {
-            color: #222222 !important; /* Tiêu đề màu đen */
+            color: #222222 !important;
             font-weight: 600;
         }
 
@@ -138,24 +139,23 @@
         .btn-primary {
             background-color: var(--accent-color) !important;
             border-color: var(--accent-color) !important;
-            color: #ffffff !important; /* Nút vàng chữ trắng */
+            color: #ffffff !important;
             font-weight: bold;
         }
 
             .btn-primary:hover {
-                background-color: #b5925a !important; /* Màu vàng sậm hơn khi di chuột */
+                background-color: #b5925a !important;
             }
 
-        /* --- FORM TÀI KHOẢN (CARD) --- */
         .card {
-            background-color: #ffffff !important; /* Nền thẻ trắng */
+            background-color: #ffffff !important;
             border: 1px solid var(--border-color) !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* Đổ bóng nhẹ cho nổi bật */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         .card-header {
             background-color: #f8f9fa !important;
-            color: var(--accent-color) !important; /* Chữ header màu vàng */
+            color: var(--accent-color) !important;
             border-bottom: 1px solid var(--border-color) !important;
             font-weight: bold;
         }
@@ -164,7 +164,6 @@
             color: var(--text-color-primary) !important;
         }
 
-        /* --- LAYOUT TỔNG THỂ & NAVBAR --- */
         #wrapper {
             display: flex;
             width: 100%;
@@ -174,7 +173,7 @@
             min-width: 220px;
             max-width: 220px;
             background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color); /* Viền xám thay vì vàng */
+            border-right: 1px solid var(--border-color);
             position: fixed;
             height: 100vh;
             z-index: 1000;
@@ -186,7 +185,7 @@
             padding: 1rem 0;
             text-align: center;
             border-bottom: 1px solid var(--border-color);
-            color: var(--accent-color) !important; /* Giữ chữ Logo vàng */
+            color: var(--accent-color) !important;
         }
 
         #page-content-wrapper {
@@ -209,13 +208,12 @@
         }
 
         .navbar-custom {
-            background-color: #ffffff !important; /* Navbar màu trắng */
+            background-color: #ffffff !important;
             border-bottom: 1px solid var(--border-color) !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.04);
         }
 
         .btn-outline-light {
-            /* Nút thu gọn menu đổi thành viền xám, chữ xám để nhìn rõ trên nền trắng */
             border-color: #cccccc !important;
             color: #555555 !important;
         }
@@ -247,7 +245,6 @@
             }
         }
 
-        /* --- CSS CHO LOGO --- */
         .navbar-brand.p-0 {
             display: flex;
             align-items: center;
@@ -294,7 +291,10 @@
                         </button>
 
                         <a class="navbar-brand p-0" asp-controller="Invoices" asp-action="Index">
-                            <img src="~/SharedImages/Logo/LogoChu.png" alt="Dé Sounté Mountepré" class="navbar-logo-img">
+                            <img src="@logoUrl"
+                                 alt="Dé Sounté Mountepré"
+                                 class="navbar-logo-img"
+                                 onerror="this.onerror=null;this.src='@fallbackLogoUrl';" />
                         </a>
 
                         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -330,6 +330,7 @@
             }
         });
     </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 
     <script>
@@ -340,21 +341,13 @@
                 .build();
 
             connection.on("ReceiveNewBooking", function (tenKhach, soDienThoai) {
-
-                // ==========================================
-                // 1. PHÁT ÂM THANH THÔNG BÁO
-                // ==========================================
                 try {
-                    // Trỏ đúng vào đường dẫn file mp3 bạn vừa ném vào thư mục wwwroot
                     let notificationSound = new Audio('/audio/ting.mp3');
                     notificationSound.play();
                 } catch (error) {
                     console.log("Lỗi phát âm thanh: ", error);
                 }
 
-                // ==========================================
-                // 2. HIỆN POPUP TRÊN MÀN HÌNH
-                // ==========================================
                 Swal.fire({
                     title: '🎉 CÓ ĐƠN ĐẶT BÀN MỚI!',
                     html: `Khách hàng: <strong>${tenKhach}</strong><br/>SĐT: <strong>${soDienThoai}</strong><br/>Vui lòng kiểm tra và xác nhận ngay!`,
@@ -380,6 +373,7 @@
             });
         });
     </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
