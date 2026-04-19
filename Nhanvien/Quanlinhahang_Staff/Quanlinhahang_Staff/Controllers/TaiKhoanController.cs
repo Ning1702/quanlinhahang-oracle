@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Quanlinhahang.Data.Models;
 using Quanlinhahang_Staff.Models.ViewModels;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -60,20 +61,26 @@ namespace Quanlinhahang_Staff.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CapNhat(TaiKhoanStaffVM model, string? NewPassword)
         {
-            if (!ModelState.IsValid)
-                return View("Index", model);
+            int? sessionUserId = HttpContext.Session.GetInt32("UserId");
+            if (sessionUserId == null)
+                return Redirect("https://quanlinhahang-admin.onrender.com/Account/Login");
 
             var nv = await _context.NhanViens.FirstOrDefaultAsync(x => x.NhanVienId == model.NhanVienID);
-            var tk = await _context.TaiKhoans.FirstOrDefaultAsync(x => x.TaiKhoanId == model.TaiKhoanID);
+            var tk = await _context.TaiKhoans.FirstOrDefaultAsync(x => x.TaiKhoanId == sessionUserId.Value);
 
             if (nv == null || tk == null)
-                return NotFound();
+            {
+                TempData["update_error"] = true;
+                TempData["msg"] = "Không tìm thấy thông tin tài khoản.";
+                return RedirectToAction("Index");
+            }
 
+            string hoTenMoi = (model.HoTen ?? "").Trim();
+            string sdtMoi = (model.SoDienThoai ?? "").Trim();
             string tenDangNhapMoi = (model.TenDangNhap ?? "").Trim();
             string emailMoi = (model.Email ?? "").Trim();
-            string soDienThoaiMoi = (model.SoDienThoai ?? "").Trim();
 
-            if (string.IsNullOrWhiteSpace(model.HoTen))
+            if (string.IsNullOrWhiteSpace(hoTenMoi))
             {
                 TempData["update_error"] = true;
                 TempData["msg"] = "Họ tên không được để trống.";
@@ -95,7 +102,7 @@ namespace Quanlinhahang_Staff.Controllers
             }
 
             bool tenDangNhapDaTonTai = await _context.TaiKhoans.AnyAsync(x =>
-                x.TaiKhoanId != model.TaiKhoanID &&
+                x.TaiKhoanId != tk.TaiKhoanId &&
                 x.TenDangNhap == tenDangNhapMoi);
 
             if (tenDangNhapDaTonTai)
@@ -106,7 +113,7 @@ namespace Quanlinhahang_Staff.Controllers
             }
 
             bool emailDaTonTai = await _context.TaiKhoans.AnyAsync(x =>
-                x.TaiKhoanId != model.TaiKhoanID &&
+                x.TaiKhoanId != tk.TaiKhoanId &&
                 x.Email == emailMoi);
 
             if (emailDaTonTai)
@@ -116,8 +123,9 @@ namespace Quanlinhahang_Staff.Controllers
                 return RedirectToAction("Index");
             }
 
-            nv.HoTen = model.HoTen.Trim();
-            nv.SoDienThoai = soDienThoaiMoi;
+            // Cập nhật dữ liệu
+            nv.HoTen = hoTenMoi;
+            nv.SoDienThoai = sdtMoi;
 
             tk.TenDangNhap = tenDangNhapMoi;
             tk.Email = emailMoi;
@@ -127,7 +135,38 @@ namespace Quanlinhahang_Staff.Controllers
                 tk.MatKhauHash = GetSHA256(NewPassword.Trim());
             }
 
-            await _context.SaveChangesAsync();
+            var changed = await _context.SaveChangesAsync();
+
+            if (changed <= 0)
+            {
+                TempData["update_error"] = true;
+                TempData["msg"] = "Không có dữ liệu nào được cập nhật.";
+                return RedirectToAction("Index");
+            }
+
+            // Cập nhật lại session nếu cần
+            HttpContext.Session.SetInt32("UserId", tk.TaiKhoanId);
+
+            // Refresh cookie đăng nhập để claim / tên mới đồng bộ ngay
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, tk.TaiKhoanId.ToString()),
+                new Claim(ClaimTypes.Name, tk.TenDangNhap ?? ""),
+                new Claim(ClaimTypes.Email, tk.Email ?? ""),
+                new Claim(ClaimTypes.Role, tk.VaiTro ?? "Staff")
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                new AuthenticationProperties
+                {
+                    IsPersistent = false,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                });
 
             TempData["update"] = true;
             TempData["msg"] = "Cập nhật thông tin cá nhân thành công!";
