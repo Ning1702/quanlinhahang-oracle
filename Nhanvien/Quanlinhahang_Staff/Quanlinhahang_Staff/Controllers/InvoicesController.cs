@@ -81,7 +81,7 @@ namespace Quanlinhahang_Staff.Controllers
                 return new InvoiceRowVM
                 {
                     HoaDonID = h.HoaDonId,
-                    NgayLap = h.NgayLap ?? DateTime.Now,
+                    NgayLap = h.NgayLap ?? DateTime.UtcNow,
                     NgayDen = (h.DatBan != null && h.DatBan.NgayDen.HasValue)
                         ? h.DatBan.NgayDen.Value.ToDateTime(TimeOnly.MinValue)
                         : DateTime.MinValue,
@@ -207,7 +207,7 @@ namespace Quanlinhahang_Staff.Controllers
             var hd = new HoaDon
             {
                 DatBanId = datBan.DatBanId,
-                NgayLap = DateTime.Now,
+                NgayLap = DateTime.UtcNow,
                 TongTien = 0,
                 TrangThaiId = 1
             };
@@ -433,10 +433,10 @@ namespace Quanlinhahang_Staff.Controllers
 
             var vm = new InvoiceCreateVM
             {
-                NgayDen = DateTime.Now
+                NgayDen = DateTime.UtcNow
             };
 
-            int hour = DateTime.Now.Hour;
+            int hour = DateTime.UtcNow.Hour;
             string tenKhungGio = hour < 15 ? "Trưa" : "Tối";
             var kg = await _db.KhungGios.FirstOrDefaultAsync(k => k.TenKhungGio == tenKhungGio);
             if (kg != null) vm.KhungGioID = kg.KhungGioId;
@@ -465,7 +465,7 @@ namespace Quanlinhahang_Staff.Controllers
                 BanPhongId = (vm.BanPhongID == null || vm.BanPhongID == 0) ? null : vm.BanPhongID,
                 KhungGioId = vm.KhungGioID,
                 NgayDen = DateOnly.FromDateTime(vm.NgayDen),
-                ThoiGianTaoDon = DateTime.Now,
+                ThoiGianTaoDon = DateTime.UtcNow,
                 TrangThaiId = 3,
                 YeuCauDacBiet = "Tạo tại quầy"
             };
@@ -476,7 +476,7 @@ namespace Quanlinhahang_Staff.Controllers
             var hd = new HoaDon
             {
                 DatBanId = datBan.DatBanId,
-                NgayLap = DateTime.Now,
+                NgayLap = DateTime.UtcNow,
                 TongTien = 0,
                 TrangThaiId = 3,
                 Vatpercent = 10m
