@@ -27,7 +27,7 @@
 
             <div class="form-group mb-3">
                 <label asp-for="NgayLap" class="control-label">Ngày lập</label>
-                <input asp-for="NgayLap" class="form-control" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                <input asp-for="NgayLap" class="form-control" type="datetime-local" value="@DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm")" />
                 <span asp-validation-for="NgayLap" class="text-danger"></span>
             </div>
 

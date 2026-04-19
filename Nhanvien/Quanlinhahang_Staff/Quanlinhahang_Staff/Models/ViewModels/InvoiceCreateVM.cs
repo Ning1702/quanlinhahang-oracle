@@ -10,7 +10,7 @@ namespace Quanlinhahang_Staff.Models.ViewModels
         public int? BanPhongID { get; set; } // Bàn phòng
 
         [Required(ErrorMessage = "Vui lòng chọn ngày đến")]
-        public DateTime NgayDen { get; set; } = DateTime.Now;
+        public DateTime NgayDen { get; set; } = DateTime.UtcNow;
 
         [Required(ErrorMessage = "Vui lòng chọn khung giờ")]
         public int KhungGioID { get; set; }

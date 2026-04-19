@@ -28,7 +28,7 @@
     <div class="title mb-1">Nhà hàng Quanlinhahang_Staff</div>
     <div>Mã hóa đơn: <b>#@Model.HoaDonId</b></div>
 
-    <div>Ngày: @(Model.NgayLap?.ToString("dd/MM/yyyy HH:mm") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm"))</div>
+    <div>Ngày: @(Model.NgayLap?.ToString("dd/MM/yyyy HH:mm") ?? DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm"))</div>
 
     <div>Khách hàng: <b>@(kh?.HoTen ?? "Khách lẻ")</b> - @(kh?.SoDienThoai ?? "")</div>
 
