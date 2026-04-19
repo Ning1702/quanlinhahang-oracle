@@ -27,9 +27,6 @@ namespace Quanlinhahang_Staff.Controllers
             return Ok(new { success = true });
         }
 
-        // ==============================
-        // LIVE SEARCH KHÁCH HÀNG
-        // ==============================
         [HttpGet]
         public async Task<IActionResult> SearchCustomer(string keyword)
         {
@@ -55,9 +52,6 @@ namespace Quanlinhahang_Staff.Controllers
             return Json(data);
         }
 
-        // ==============================
-        // LIST HÓA ĐƠN
-        // ==============================
         public async Task<IActionResult> Index([FromQuery] InvoiceFilterVM f, [FromQuery] int status = 0)
         {
             if (!IsLoggedIn) return RequireLogin();
@@ -127,9 +121,6 @@ namespace Quanlinhahang_Staff.Controllers
             return View(list);
         }
 
-        // ==============================
-        // CÁC HÀM XỬ LÝ TRẠNG THÁI
-        // ==============================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmInvoice(int id, int status = 0)
@@ -246,9 +237,6 @@ namespace Quanlinhahang_Staff.Controllers
             return RedirectToAction(nameof(Edit), new { id = hd.HoaDonId, status });
         }
 
-        // ==============================
-        // EDIT (VIEW + LOAD DATA)
-        // ==============================
         public async Task<IActionResult> Edit(int id, int status = 0)
         {
             ViewBag.Status = status;
@@ -292,9 +280,6 @@ namespace Quanlinhahang_Staff.Controllers
             return View(vm);
         }
 
-        // ==============================
-        // SAVE (POST) - CẬP NHẬT HÓA ĐƠN
-        // ==============================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Save(InvoiceEditVM vm, int status = 0, string ItemsJson = "", DateTime? NewNgayDen = null, int? NewKhungGioID = null)
@@ -359,9 +344,6 @@ namespace Quanlinhahang_Staff.Controllers
             return RedirectToAction(nameof(Edit), new { id = vm.HoaDonID, status });
         }
 
-        // =======================================
-        // API: LẤY DANH SÁCH BÀN PHÒNG
-        // =======================================
         [HttpGet]
         public IActionResult GetBanPhong(int hoaDonId)
         {
@@ -459,16 +441,20 @@ namespace Quanlinhahang_Staff.Controllers
         {
             ViewBag.Status = status;
 
+            var nowLocal = DateTime.Now;
+
             var vm = new InvoiceCreateVM
             {
-                NgayDen = DateTime.UtcNow
+                NgayDen = nowLocal.Date
             };
 
-            int hour = DateTime.UtcNow.Hour;
+            int hour = nowLocal.Hour;
             string tenKhungGio = hour < 15 ? "Trưa" : "Tối";
 
             var kg = await _db.KhungGios.FirstOrDefaultAsync(k => k.TenKhungGio == tenKhungGio);
             if (kg != null) vm.KhungGioID = kg.KhungGioId;
+
+            ViewBag.TodayStr = nowLocal.ToString("yyyy-MM-dd");
 
             ViewBag.ListKhungGio = await _db.KhungGios
                 .Where(k => k.TenKhungGio == "Trưa" || k.TenKhungGio == "Tối")
@@ -486,9 +472,29 @@ namespace Quanlinhahang_Staff.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateWalkIn(InvoiceCreateVM vm, int status = 0)
         {
+            var nowLocal = DateTime.Now;
+            var selectedDate = vm.NgayDen.Date;
+
+            var selectedKhungGio = await _db.KhungGios.FirstOrDefaultAsync(k => k.KhungGioId == vm.KhungGioID);
+
+            if (selectedDate < nowLocal.Date)
+            {
+                ModelState.AddModelError("", "Không được chọn ngày trong quá khứ.");
+            }
+
+            if (selectedKhungGio != null && selectedDate == nowLocal.Date)
+            {
+                if (selectedKhungGio.GioBatDau.ToTimeSpan() <= nowLocal.TimeOfDay)
+                {
+                    ModelState.AddModelError("", $"Khung giờ {selectedKhungGio.TenKhungGio} ({selectedKhungGio.GioBatDau:HH\\:mm} - {selectedKhungGio.GioKetThuc:HH\\:mm}) đã qua.");
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 ViewBag.Status = status;
+                ViewBag.TodayStr = nowLocal.ToString("yyyy-MM-dd");
+
                 ViewBag.ListKhungGio = await _db.KhungGios
                     .Where(k => k.TenKhungGio == "Trưa" || k.TenKhungGio == "Tối")
                     .OrderBy(k => k.KhungGioId)
@@ -547,6 +553,8 @@ namespace Quanlinhahang_Staff.Controllers
                 ModelState.AddModelError("", ex.InnerException?.Message ?? ex.Message);
 
                 ViewBag.Status = status;
+                ViewBag.TodayStr = nowLocal.ToString("yyyy-MM-dd");
+
                 ViewBag.ListKhungGio = await _db.KhungGios
                     .Where(k => k.TenKhungGio == "Trưa" || k.TenKhungGio == "Tối")
                     .OrderBy(k => k.KhungGioId)

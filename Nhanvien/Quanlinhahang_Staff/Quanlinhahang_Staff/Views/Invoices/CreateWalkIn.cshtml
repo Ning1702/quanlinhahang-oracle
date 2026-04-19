@@ -45,7 +45,11 @@
 
                 <div class="col-md-6">
                     <label class="form-label fw-bold text-dark">Ngày đến</label>
-                    <input asp-for="NgayDen" type="date" class="form-control" value="@Model.NgayDen.ToString("yyyy-MM-dd")" />
+                    <input asp-for="NgayDen"
+                           type="date"
+                           class="form-control"
+                           value="@Model.NgayDen.ToString("yyyy-MM-dd")"
+                           min="@ViewBag.TodayStr" />
                     <span asp-validation-for="NgayDen" class="text-danger"></span>
                 </div>
 
