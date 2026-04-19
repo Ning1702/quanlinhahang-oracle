@@ -123,16 +123,43 @@
                 </td>
 
                 <td class="text-center">
-                    @if (currentStatus == 0) // Tab Tất cả
+                    @if (currentStatus == 0) // Chỉ sửa tab Tất cả
                     {
-                        @if (x.TrangThaiID == 1) // Nếu là đơn mới -> Hiện nút Quản lý
+                        @if (x.TrangThaiID == 1) // Chờ xác nhận
                         {
-                            // [SỬA LỖI 404]: Đổi GoManage thành Edit
                             <a asp-action="Edit" asp-route-id="@x.HoaDonID" class="btn btn-sm btn-primary">
                                 Quản lý
                             </a>
                         }
-                        else
+                        else if (x.TrangThaiID == 2) // Đã xác nhận
+                        {
+                            <a asp-action="Edit" asp-route-id="@x.HoaDonID" class="btn btn-sm btn-primary me-1">
+                                Quản lý
+                            </a>
+
+                            <form class="d-inline confirm-action" method="post" asp-action="HuyHoaDon" asp-route-id="@x.HoaDonID">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-danger">Hủy</button>
+                            </form>
+                        }
+                        else if (x.TrangThaiID == 3) // Đang phục vụ
+                        {
+                            <a asp-action="Edit" asp-route-id="@x.HoaDonID" class="btn btn-sm btn-primary me-1">
+                                Quản lý
+                            </a>
+
+                            <form class="d-inline confirm-action" method="post" asp-action="ThanhToan" asp-route-id="@x.HoaDonID">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-success">Thanh toán</button>
+                            </form>
+                        }
+                        else if (x.TrangThaiID == 4) // Đã thanh toán
+                        {
+                            <a asp-action="Details" asp-route-id="@x.HoaDonID" class="btn btn-sm btn-info">
+                                Xem
+                            </a>
+                        }
+                        else if (x.TrangThaiID == 5) // Đã hủy
                         {
                             <a asp-action="Details" asp-route-id="@x.HoaDonID" class="btn btn-sm btn-info">
                                 Xem
@@ -141,6 +168,7 @@
                     }
                     else
                     {
+                        @* Giữ nguyên logic cũ cho các tab khác *@
                         @if (x.TrangThaiID == 4) // Đã thanh toán
                         {
                             <a asp-action="Details" asp-route-id="@x.HoaDonID" asp-route-status="@currentStatus" class="btn btn-sm btn-info me-1">Xem</a>
