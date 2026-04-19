@@ -56,12 +56,15 @@ namespace Quanlinhahang_Customer.Controllers
             int khungGioId = await ResolveKhungGioId(timeSlot);
             if (khungGioId == 0) return BadRequest(new { message = "Vui lòng chọn khung giờ." });
 
-            var allTables = await _context.BanPhongs.Include(b => b.LoaiBanPhong).OrderBy(b => b.BanPhongId).ToListAsync();
+            var allTables = await _context.BanPhongs
+                .Include(b => b.LoaiBanPhong)
+                .OrderBy(b => b.BanPhongId)
+                .ToListAsync();
 
             var bookedTableIds = await _context.DatBans
                 .Where(d => d.NgayDen == dateOnlySearch
                          && d.KhungGioId == khungGioId
-                         && d.TrangThaiId != 5 // 5 = Đã hủy
+                         && d.TrangThaiId != 5
                          && d.BanPhongId != null)
                 .Select(d => d.BanPhongId)
                 .ToListAsync();
@@ -84,19 +87,23 @@ namespace Quanlinhahang_Customer.Controllers
             if (string.IsNullOrWhiteSpace(req.username))
                 return Unauthorized(new { success = false, message = "Bạn cần đăng nhập để đặt bàn." });
 
-            var khachHang = await _context.KhachHangs.Include(k => k.TaiKhoan)
+            var khachHang = await _context.KhachHangs
+                .Include(k => k.TaiKhoan)
                 .FirstOrDefaultAsync(k => k.TaiKhoan != null && k.TaiKhoan.TenDangNhap == req.username);
 
-            if (khachHang == null) return NotFound(new { success = false, message = "Không tìm thấy khách hàng." });
+            if (khachHang == null)
+                return NotFound(new { success = false, message = "Không tìm thấy khách hàng." });
 
             var items = req.items ?? new List<BookingItem>();
-            if (items.Count == 0) return Json(new { success = false, message = "Giỏ hàng rỗng." });
+            if (items.Count == 0)
+                return Json(new { success = false, message = "Giỏ hàng rỗng." });
 
             if (!DateTime.TryParseExact(req.bookingDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime bookingDateTime))
-                return Json(new { success = false, message = "Ngày không hợp lệ" });
+                return Json(new { success = false, message = "Ngày không hợp lệ." });
 
             var today = DateTime.Today;
-            var now = DateTime.UtcNow;
+            var nowLocal = DateTime.Now;
+            var bookingDate = DateOnly.FromDateTime(bookingDateTime);
 
             if (bookingDateTime.Date < today)
             {
@@ -104,29 +111,24 @@ namespace Quanlinhahang_Customer.Controllers
             }
 
             int khungGioId = await ResolveKhungGioId(req.timeSlot);
-            if (khungGioId == 0) return Json(new { success = false, message = "Khung giờ không hợp lệ" });
+            if (khungGioId == 0)
+                return Json(new { success = false, message = "Khung giờ không hợp lệ." });
 
-            if (bookingDateTime.Date == today)
+            var khungGio = await _context.KhungGios
+                .FirstOrDefaultAsync(k => k.KhungGioId == khungGioId);
+
+            if (khungGio == null)
+                return Json(new { success = false, message = "Không tìm thấy thông tin khung giờ." });
+
+            // Nếu đặt trong ngày hôm nay thì khung giờ phải chưa bắt đầu
+            if (bookingDateTime.Date == today && khungGio.GioBatDau.ToTimeSpan() <= nowLocal.TimeOfDay)
             {
-                string caDat = req.timeSlot?.Trim().ToLower() ?? "";
-
-                if (caDat.Contains("trua") || caDat.Contains("trưa"))
+                return Json(new
                 {
-                    if (now.Hour >= 14)
-                    {
-                        return Json(new { success = false, message = "Đã quá giờ nhận khách cho ca Trưa hôm nay. Vui lòng chọn ca Tối hoặc ngày khác." });
-                    }
-                }
-                else if (caDat.Contains("toi") || caDat.Contains("tối"))
-                {
-                    if (now.Hour >= 21)
-                    {
-                        return Json(new { success = false, message = "Đã quá giờ nhận khách cho ca Tối hôm nay. Nhà hàng sắp đóng cửa." });
-                    }
-                }
+                    success = false,
+                    message = $"Khung giờ {khungGio.TenKhungGio} ({khungGio.GioBatDau:hh\\:mm} - {khungGio.GioKetThuc:hh\\:mm}) đã qua, vui lòng chọn khung giờ khác hoặc ngày khác."
+                });
             }
-
-            var bookingDate = DateOnly.FromDateTime(bookingDateTime);
 
             int? banPhongId = req.BanPhongId;
             if (banPhongId.HasValue && banPhongId > 0)
@@ -135,8 +137,14 @@ namespace Quanlinhahang_Customer.Controllers
                 if (banDaChon == null || banDaChon.TrangThaiId != 0)
                     return Json(new { success = false, message = "Bàn không khả dụng." });
 
-                bool isBooked = await _context.DatBans.AnyAsync(d => d.NgayDen == bookingDate && d.KhungGioId == khungGioId && d.BanPhongId == banPhongId.Value && d.TrangThaiId != 5);
-                if (isBooked) return Json(new { success = false, message = "Bàn đã có người đặt." });
+                bool isBooked = await _context.DatBans.AnyAsync(d =>
+                    d.NgayDen == bookingDate &&
+                    d.KhungGioId == khungGioId &&
+                    d.BanPhongId == banPhongId.Value &&
+                    d.TrangThaiId != 5);
+
+                if (isBooked)
+                    return Json(new { success = false, message = "Bàn đã có người đặt." });
             }
 
             decimal tongTienTinhToan = items.Sum(i => (i.price ?? 0m) * (i.qty ?? 1));
@@ -156,6 +164,7 @@ namespace Quanlinhahang_Customer.Controllers
                         TrangThaiId = 1,
                         ThoiGianTaoDon = DateTime.UtcNow
                     };
+
                     _context.DatBans.Add(datBan);
                     await _context.SaveChangesAsync();
 
@@ -168,6 +177,7 @@ namespace Quanlinhahang_Customer.Controllers
                         Vatpercent = 10m,
                         TaiKhoanId = khachHang.TaiKhoanId
                     };
+
                     _context.HoaDons.Add(hoaDon);
                     await _context.SaveChangesAsync();
 
@@ -187,43 +197,45 @@ namespace Quanlinhahang_Customer.Controllers
 
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
-                    // =========================================================================
-                    // BẮN TÍN HIỆU SIGNALR SANG PROJECT STAFF KHI ĐẶT BÀN THÀNH CÔNG
-                    // =========================================================================
+
                     try
                     {
-                        // 1. Thêm bộ lọc này để BỎ QUA kiểm tra bảo mật HTTPS khi chạy ở localhost
                         var handler = new HttpClientHandler
                         {
-                            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; }
+                            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
                         };
 
-                        // Truyền handler vào HttpClient
                         using (var client = new HttpClient(handler))
                         {
                             string ten = khachHang.HoTen ?? "Khách hàng";
                             string sdt = khachHang.SoDienThoai ?? "0000000000";
 
-                            string staffApiUrl = $"https://localhost:7163/api/NotifyNewBooking?tenKhach={Uri.EscapeDataString(ten)}&soDienThoai={Uri.EscapeDataString(sdt)}";
+                            string staffApiUrl =
+                                $"https://localhost:7163/api/NotifyNewBooking?tenKhach={Uri.EscapeDataString(ten)}&soDienThoai={Uri.EscapeDataString(sdt)}";
 
-                            // 2. Dùng 'await' thay vì '_ =' để đảm bảo tín hiệu được BẮN ĐI XONG THÌ MỚI ĐÓNG KẾT NỐI
-                            // Đừng lo, tốc độ gọi localhost chỉ mất khoảng 5-10 mili-giây, không làm chậm web của khách đâu!
                             await client.PostAsync(staffApiUrl, null);
                         }
                     }
                     catch (Exception ex)
                     {
-                        // In ra cửa sổ Output của Visual Studio để bạn dễ kiểm tra nếu có lỗi
                         Console.WriteLine("LỖI GỬI TÍN HIỆU SIGNALR: " + ex.Message);
                     }
-                    // =========================================================================
 
-                    return Json(new { success = true, message = "Đặt bàn thành công!", datBanId = datBan.DatBanId });
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Đặt bàn thành công!",
+                        datBanId = datBan.DatBanId
+                    });
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    return StatusCode(500, new { success = false, message = "LỖI DB: " + (ex.InnerException?.Message ?? ex.Message) });
+                    return StatusCode(500, new
+                    {
+                        success = false,
+                        message = "LỖI DB: " + (ex.InnerException?.Message ?? ex.Message)
+                    });
                 }
             }
         }
@@ -231,11 +243,15 @@ namespace Quanlinhahang_Customer.Controllers
         private async Task<int> ResolveKhungGioId(string? timeSlot)
         {
             if (string.IsNullOrWhiteSpace(timeSlot)) return 0;
+
             string key = timeSlot.Trim();
 
-            if (key.Contains("trua", StringComparison.OrdinalIgnoreCase) || key.Contains("trưa", StringComparison.OrdinalIgnoreCase)) key = "Trưa";
-            else if (key.Contains("toi", StringComparison.OrdinalIgnoreCase) || key.Contains("tối", StringComparison.OrdinalIgnoreCase)) key = "Tối";
-            else return 0;
+            if (key.Contains("trua", StringComparison.OrdinalIgnoreCase) || key.Contains("trưa", StringComparison.OrdinalIgnoreCase))
+                key = "Trưa";
+            else if (key.Contains("toi", StringComparison.OrdinalIgnoreCase) || key.Contains("tối", StringComparison.OrdinalIgnoreCase))
+                key = "Tối";
+            else
+                return 0;
 
             var khungGio = await _context.KhungGios.FirstOrDefaultAsync(k => k.TenKhungGio == key);
             return khungGio != null ? khungGio.KhungGioId : 0;
