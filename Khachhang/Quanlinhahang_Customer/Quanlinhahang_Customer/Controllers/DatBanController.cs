@@ -47,14 +47,13 @@ namespace Quanlinhahang_Customer.Controllers
                 return BadRequest(new { message = "Ngày không hợp lệ." });
 
             if (searchDate.Date < DateTime.Today)
-            {
                 return BadRequest(new { message = "Không thể xem dữ liệu của ngày trong quá khứ." });
-            }
 
             var dateOnlySearch = DateOnly.FromDateTime(searchDate);
 
             int khungGioId = await ResolveKhungGioId(timeSlot);
-            if (khungGioId == 0) return BadRequest(new { message = "Vui lòng chọn khung giờ." });
+            if (khungGioId == 0)
+                return BadRequest(new { message = "Vui lòng chọn khung giờ." });
 
             var allTables = await _context.BanPhongs
                 .Include(b => b.LoaiBanPhong)
@@ -106,9 +105,7 @@ namespace Quanlinhahang_Customer.Controllers
             var bookingDate = DateOnly.FromDateTime(bookingDateTime);
 
             if (bookingDateTime.Date < today)
-            {
                 return Json(new { success = false, message = "Không thể đặt bàn cho ngày trong quá khứ." });
-            }
 
             int khungGioId = await ResolveKhungGioId(req.timeSlot);
             if (khungGioId == 0)
@@ -120,7 +117,6 @@ namespace Quanlinhahang_Customer.Controllers
             if (khungGio == null)
                 return Json(new { success = false, message = "Không tìm thấy thông tin khung giờ." });
 
-            // Nếu đặt trong ngày hôm nay thì khung giờ phải chưa bắt đầu
             if (bookingDateTime.Date == today && khungGio.GioBatDau.ToTimeSpan() <= nowLocal.TimeOfDay)
             {
                 return Json(new
@@ -131,112 +127,130 @@ namespace Quanlinhahang_Customer.Controllers
             }
 
             int? banPhongId = req.BanPhongId;
+
             if (banPhongId.HasValue && banPhongId > 0)
             {
                 var banDaChon = await _context.BanPhongs.FindAsync(banPhongId.Value);
                 if (banDaChon == null || banDaChon.TrangThaiId != 0)
                     return Json(new { success = false, message = "Bàn không khả dụng." });
 
-                bool isBooked = await _context.DatBans.AnyAsync(d =>
+                var activeConflict = await _context.DatBans.AnyAsync(d =>
+                    d.BanPhongId == banPhongId.Value &&
                     d.NgayDen == bookingDate &&
                     d.KhungGioId == khungGioId &&
-                    d.BanPhongId == banPhongId.Value &&
                     d.TrangThaiId != 5);
 
-                if (isBooked)
+                if (activeConflict)
                     return Json(new { success = false, message = "Bàn đã có người đặt." });
             }
 
             decimal tongTienTinhToan = items.Sum(i => (i.price ?? 0m) * (i.qty ?? 1));
 
-            using (var transaction = await _context.Database.BeginTransactionAsync())
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
+                var datBan = new DatBan
+                {
+                    KhachHangId = khachHang.KhachHangId,
+                    BanPhongId = banPhongId,
+                    KhungGioId = khungGioId,
+                    NgayDen = bookingDate,
+                    SoNguoi = req.guestCount ?? 1,
+                    YeuCauDacBiet = req.note,
+                    TrangThaiId = 1,
+                    ThoiGianTaoDon = DateTime.UtcNow
+                };
+
+                _context.DatBans.Add(datBan);
+                await _context.SaveChangesAsync();
+
+                var hoaDon = new HoaDon
+                {
+                    DatBanId = datBan.DatBanId,
+                    NgayLap = DateTime.UtcNow,
+                    TongTien = tongTienTinhToan,
+                    TrangThaiId = 1,
+                    Vatpercent = 10m,
+                    TaiKhoanId = khachHang.TaiKhoanId
+                };
+
+                _context.HoaDons.Add(hoaDon);
+                await _context.SaveChangesAsync();
+
+                foreach (var item in items)
+                {
+                    if (item.id.HasValue && item.id.Value > 0)
+                    {
+                        _context.ChiTietHoaDons.Add(new ChiTietHoaDon
+                        {
+                            HoaDonId = hoaDon.HoaDonId,
+                            MonAnId = item.id.Value,
+                            SoLuong = item.qty ?? 1,
+                            DonGia = item.price ?? 0m
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
                 try
                 {
-                    var datBan = new DatBan
+                    var handler = new HttpClientHandler
                     {
-                        KhachHangId = khachHang.KhachHangId,
-                        BanPhongId = banPhongId,
-                        KhungGioId = khungGioId,
-                        NgayDen = bookingDate,
-                        SoNguoi = req.guestCount ?? 1,
-                        YeuCauDacBiet = req.note,
-                        TrangThaiId = 1,
-                        ThoiGianTaoDon = DateTime.UtcNow
+                        ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
                     };
 
-                    _context.DatBans.Add(datBan);
-                    await _context.SaveChangesAsync();
+                    using var client = new HttpClient(handler);
+                    string ten = khachHang.HoTen ?? "Khách hàng";
+                    string sdt = khachHang.SoDienThoai ?? "0000000000";
 
-                    var hoaDon = new HoaDon
-                    {
-                        DatBanId = datBan.DatBanId,
-                        NgayLap = DateTime.UtcNow,
-                        TongTien = tongTienTinhToan,
-                        TrangThaiId = 1,
-                        Vatpercent = 10m,
-                        TaiKhoanId = khachHang.TaiKhoanId
-                    };
+                    string staffApiUrl =
+                        $"https://quanlinhahang-staff.onrender.com/api/NotifyNewBooking?tenKhach={Uri.EscapeDataString(ten)}&soDienThoai={Uri.EscapeDataString(sdt)}";
 
-                    _context.HoaDons.Add(hoaDon);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var item in items)
-                    {
-                        if (item.id.HasValue && item.id.Value > 0)
-                        {
-                            _context.ChiTietHoaDons.Add(new ChiTietHoaDon
-                            {
-                                HoaDonId = hoaDon.HoaDonId,
-                                MonAnId = item.id.Value,
-                                SoLuong = item.qty ?? 1,
-                                DonGia = item.price ?? 0m
-                            });
-                        }
-                    }
-
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    try
-                    {
-                        var handler = new HttpClientHandler
-                        {
-                            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-                        };
-
-                        using (var client = new HttpClient(handler))
-                        {
-                            string ten = khachHang.HoTen ?? "Khách hàng";
-                            string sdt = khachHang.SoDienThoai ?? "0000000000";
-
-                            string staffApiUrl =
-                                $"https://quanlinhahang-staff.onrender.com/api/NotifyNewBooking?tenKhach={Uri.EscapeDataString(ten)}&soDienThoai={Uri.EscapeDataString(sdt)}";
-
-                            await client.PostAsync(staffApiUrl, null);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("LỖI GỬI TÍN HIỆU SIGNALR: " + ex.Message);
-                    }
-
-                    return Json(new
-                    {
-                        success = true,
-                        message = "Đặt bàn thành công!",
-                        datBanId = datBan.DatBanId
-                    });
+                    await client.PostAsync(staffApiUrl, null);
                 }
                 catch (Exception ex)
                 {
-                    await transaction.RollbackAsync();
-                    return StatusCode(500, new
+                    Console.WriteLine("LỖI GỬI TÍN HIỆU SIGNALR: " + ex.Message);
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Đặt bàn thành công!",
+                    datBanId = datBan.DatBanId
+                });
+            }
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync();
+
+                var innerMsg = ex.InnerException?.Message ?? ex.Message;
+
+                if (innerMsg.Contains("UQ_DatBan") || innerMsg.Contains("duplicate key value"))
+                {
+                    return Json(new
                     {
                         success = false,
-                        message = "LỖI DB: " + (ex.InnerException?.Message ?? ex.Message)
+                        message = "Bàn này đã có người đặt ở ngày và khung giờ đã chọn. Vui lòng chọn bàn khác hoặc khung giờ khác."
                     });
                 }
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "LỖI DB: " + innerMsg
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "LỖI DB: " + (ex.InnerException?.Message ?? ex.Message)
+                });
             }
         }
 
