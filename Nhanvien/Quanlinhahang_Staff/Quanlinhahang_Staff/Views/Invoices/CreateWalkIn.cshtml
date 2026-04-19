@@ -14,6 +14,8 @@
         <form asp-action="CreateWalkIn" method="post">
             @Html.AntiForgeryToken()
 
+            <div asp-validation-summary="ModelOnly" class="text-danger d-none" id="serverValidationSummary"></div>
+
             <div class="mb-4 position-relative border p-3 rounded bg-light">
                 <label class="form-label fw-bold text-dark">
                     <i class="fas fa-user-circle me-1 text-warning"></i> Thông tin khách hàng (Tùy chọn)
@@ -28,7 +30,10 @@
                 <small class="text-muted fst-italic">Bỏ trống nếu là khách vãng lai không lưu thông tin.</small>
 
                 <input type="hidden" asp-for="KhachHangID" id="hfKhachHangID" />
-                <ul id="customerResults" class="list-group position-absolute w-100 shadow" style="display:none; z-index: 1000; max-height: 250px; overflow-y: auto; top: 80%;"></ul>
+                <ul id="customerResults"
+                    class="list-group position-absolute w-100 shadow"
+                    style="display:none; z-index: 2000; max-height: 250px; overflow-y: auto; top: 80%; left: 0;">
+                </ul>
             </div>
 
             <div class="row g-3 mb-4">
@@ -75,6 +80,9 @@
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const txtSearch = document.getElementById("txtSearchCustomer");
@@ -159,6 +167,28 @@
                     resultBox.style.display = "none";
                 }
             });
+
+            const errorBox = document.getElementById("serverValidationSummary");
+            if (errorBox) {
+                const lis = errorBox.querySelectorAll("li");
+                let messages = [];
+
+                lis.forEach(li => {
+                    const text = li.textContent.trim();
+                    if (text) messages.push(text);
+                });
+
+                if (messages.length > 0) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Không thể đặt bàn",
+                        html: messages.join("<br>"),
+                        confirmButtonText: "Đóng",
+                        confirmButtonColor: "#3085d6",
+                        allowOutsideClick: false
+                    });
+                }
+            }
         });
     </script>
 }

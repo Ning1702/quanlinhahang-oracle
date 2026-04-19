@@ -486,7 +486,7 @@ namespace Quanlinhahang_Staff.Controllers
             {
                 if (selectedKhungGio.GioBatDau.ToTimeSpan() <= nowLocal.TimeOfDay)
                 {
-                    ModelState.AddModelError("", $"Khung giờ {selectedKhungGio.TenKhungGio} ({selectedKhungGio.GioBatDau:HH\\:mm} - {selectedKhungGio.GioKetThuc:HH\\:mm}) đã qua.");
+                    ModelState.AddModelError("", $"Khung giờ {selectedKhungGio.TenKhungGio} ({selectedKhungGio.GioBatDau:HH\\:mm} - {selectedKhungGio.GioKetThuc:HH\\:mm}) đã qua, vui lòng chọn khung giờ khác hoặc ngày khác.");
                 }
             }
 
