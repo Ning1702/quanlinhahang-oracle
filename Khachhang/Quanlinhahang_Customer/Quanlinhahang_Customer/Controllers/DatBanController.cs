@@ -126,7 +126,7 @@ namespace Quanlinhahang_Customer.Controllers
                 return Json(new
                 {
                     success = false,
-                    message = $"Khung giờ {khungGio.TenKhungGio} ({khungGio.GioBatDau:hh\\:mm} - {khungGio.GioKetThuc:hh\\:mm}) đã qua, vui lòng chọn khung giờ khác hoặc ngày khác."
+                    message = $"Khung giờ {khungGio.TenKhungGio} ({khungGio.GioBatDau:HH\\:mm} - {khungGio.GioKetThuc:HH\\:mm}) đã qua, vui lòng chọn khung giờ khác hoặc ngày khác."
                 });
             }
 
