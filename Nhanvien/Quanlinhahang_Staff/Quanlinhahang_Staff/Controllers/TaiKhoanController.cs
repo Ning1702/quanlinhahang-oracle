@@ -57,24 +57,74 @@ namespace Quanlinhahang_Staff.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CapNhat(TaiKhoanStaffVM model, string NewPassword)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CapNhat(TaiKhoanStaffVM model, string? NewPassword)
         {
+            if (!ModelState.IsValid)
+                return View("Index", model);
+
             var nv = await _context.NhanViens.FirstOrDefaultAsync(x => x.NhanVienId == model.NhanVienID);
-            if (nv != null)
+            var tk = await _context.TaiKhoans.FirstOrDefaultAsync(x => x.TaiKhoanId == model.TaiKhoanID);
+
+            if (nv == null || tk == null)
+                return NotFound();
+
+            string tenDangNhapMoi = (model.TenDangNhap ?? "").Trim();
+            string emailMoi = (model.Email ?? "").Trim();
+            string soDienThoaiMoi = (model.SoDienThoai ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(model.HoTen))
             {
-                nv.HoTen = model.HoTen ?? "";
-                nv.SoDienThoai = model.SoDienThoai ?? "";
+                TempData["update_error"] = true;
+                TempData["msg"] = "Họ tên không được để trống.";
+                return RedirectToAction("Index");
             }
 
-            var tk = await _context.TaiKhoans.FirstOrDefaultAsync(x => x.TaiKhoanId == model.TaiKhoanID);
-            if (tk != null)
+            if (string.IsNullOrWhiteSpace(tenDangNhapMoi))
             {
-                tk.Email = model.Email ?? "";
+                TempData["update_error"] = true;
+                TempData["msg"] = "Tên đăng nhập không được để trống.";
+                return RedirectToAction("Index");
+            }
 
-                if (!string.IsNullOrEmpty(NewPassword) && NewPassword != "********")
-                {
-                    tk.MatKhauHash = GetSHA256(NewPassword);
-                }
+            if (string.IsNullOrWhiteSpace(emailMoi))
+            {
+                TempData["update_error"] = true;
+                TempData["msg"] = "Email không được để trống.";
+                return RedirectToAction("Index");
+            }
+
+            bool tenDangNhapDaTonTai = await _context.TaiKhoans.AnyAsync(x =>
+                x.TaiKhoanId != model.TaiKhoanID &&
+                x.TenDangNhap == tenDangNhapMoi);
+
+            if (tenDangNhapDaTonTai)
+            {
+                TempData["update_error"] = true;
+                TempData["msg"] = "Tên đăng nhập đã tồn tại.";
+                return RedirectToAction("Index");
+            }
+
+            bool emailDaTonTai = await _context.TaiKhoans.AnyAsync(x =>
+                x.TaiKhoanId != model.TaiKhoanID &&
+                x.Email == emailMoi);
+
+            if (emailDaTonTai)
+            {
+                TempData["update_error"] = true;
+                TempData["msg"] = "Email đã tồn tại.";
+                return RedirectToAction("Index");
+            }
+
+            nv.HoTen = model.HoTen.Trim();
+            nv.SoDienThoai = soDienThoaiMoi;
+
+            tk.TenDangNhap = tenDangNhapMoi;
+            tk.Email = emailMoi;
+
+            if (!string.IsNullOrWhiteSpace(NewPassword) && NewPassword != "********")
+            {
+                tk.MatKhauHash = GetSHA256(NewPassword.Trim());
             }
 
             await _context.SaveChangesAsync();

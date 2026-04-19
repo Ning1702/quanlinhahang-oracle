@@ -8,6 +8,8 @@
     <h3 class="fw-bold mb-4">Thông tin tài khoản</h3>
 
     <form id="accountForm" method="post" asp-action="CapNhat">
+        @Html.AntiForgeryToken()
+
         <input type="hidden" asp-for="NhanVienID" />
         <input type="hidden" asp-for="TaiKhoanID" />
 
@@ -72,7 +74,6 @@
                 <button type="submit" id="btnSave" class="btn btn-success px-4">Cập nhật</button>
             </div>
         </div>
-
     </form>
 </div>
 
@@ -81,60 +82,46 @@
         const inputs = document.querySelectorAll(".form-input");
         const original = {};
 
-        // Lưu giá trị ban đầu (Họ tên, email...)
         inputs.forEach(x => original[x.name] = x.value);
 
-        // Nút Mắt thần và Ô mật khẩu
         const btnEye = document.getElementById("btnTogglePass");
         const txtPass = document.getElementById("txtPassword");
         const iconEye = document.getElementById("iconEye");
         const iconSlash = document.getElementById("iconEyeSlash");
 
-        // --- 1. SỰ KIỆN BẤM CHỈNH SỬA ---
         document.getElementById("btnEdit").addEventListener("click", function () {
-            // Mở khóa các ô input
             inputs.forEach(x => x.readOnly = false);
 
-            // Riêng ô Mật khẩu: Xóa trắng, bật nút mắt lên
             txtPass.value = "";
             btnEye.disabled = false;
 
-            // Đổi nút bấm
             document.getElementById("editOnlyWrapper").style.display = "none";
             document.getElementById("editButtons").style.display = "block";
         });
 
-        // --- 2. SỰ KIỆN BẤM HỦY ---
         document.getElementById("btnCancel").addEventListener("click", function () {
-            // Khóa lại các ô input, trả về giá trị cũ
             inputs.forEach(x => {
                 x.readOnly = true;
                 x.value = original[x.name];
             });
 
-            // Riêng ô Mật khẩu: Trả về "********", khóa nút mắt, reset về dạng chấm tròn
             txtPass.value = "********";
             txtPass.type = "password";
             btnEye.disabled = true;
 
-            // Reset icon mắt về trạng thái đóng
             iconEye.style.display = "inline";
             iconSlash.style.display = "none";
 
-            // Đổi nút bấm
             document.getElementById("editOnlyWrapper").style.display = "block";
             document.getElementById("editButtons").style.display = "none";
         });
 
-        // --- 3. SỰ KIỆN BẤM MẮT THẦN (ẨN/HIỆN) ---
-        btnEye.addEventListener("click", function() {
+        btnEye.addEventListener("click", function () {
             if (txtPass.type === "password") {
-                // Đang ẩn -> Hiện chữ
                 txtPass.type = "text";
                 iconEye.style.display = "none";
                 iconSlash.style.display = "inline";
             } else {
-                // Đang hiện -> Ẩn thành chấm
                 txtPass.type = "password";
                 iconEye.style.display = "inline";
                 iconSlash.style.display = "none";
@@ -144,6 +131,7 @@
 </script>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         @if (TempData["update"] != null)
         {
@@ -153,6 +141,18 @@
                         title: 'Thành công!',
                         text: '@Html.Raw(TempData["msg"])',
                         confirmButtonText: 'Đồng ý'
+                    });
+                </text>
+        }
+
+        @if (TempData["update_error"] != null)
+        {
+                <text>
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Không thể cập nhật',
+                        text: '@Html.Raw(TempData["msg"])',
+                        confirmButtonText: 'Đóng'
                     });
                 </text>
         }
