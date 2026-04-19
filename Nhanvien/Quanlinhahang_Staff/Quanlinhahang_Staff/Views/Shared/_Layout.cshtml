@@ -335,7 +335,6 @@
     <script>
         let audioUnlocked = false;
 
-        // Trick để trình duyệt cho phép phát âm thanh
         document.addEventListener("click", function unlockAudio() {
             if (audioUnlocked) return;
 
@@ -358,28 +357,29 @@
 
         connection.on("ReceiveNewBooking", function (tenKhach, soDienThoai) {
 
-            // 🔊 PHÁT ÂM THANH
             let audio = document.getElementById("notificationSound");
             if (audio) {
                 audio.currentTime = 0;
                 audio.play().catch(err => console.log("Không phát được:", err));
             }
 
-            // 🔔 POPUP
             Swal.fire({
-                icon: "info",
-                title: "📢 Có đơn đặt bàn mới!",
+                icon: "question",
+                title: "Xác nhận đơn đặt bàn?",
                 html: `
-                    <div style="font-size:16px;line-height:1.6">
-                        👤 Khách: <b>${tenKhach}</b><br/>
-                        📞 SĐT: <b>${soDienThoai}</b><br/>
-                        ⚡ Vui lòng xử lý ngay!
+                    <div style="font-size:18px; line-height:1.8;">
+                        Bạn vừa nhận được đơn mới từ khách <b>${tenKhach}</b><br>
+                        SĐT: <b>${soDienThoai}</b><br>
+                        Bạn có muốn mở danh sách hóa đơn để xử lý ngay không?
                     </div>
                 `,
-                confirmButtonText: "Xem ngay",
-                confirmButtonColor: "#c7a368",
-                background: "#fff",
-                color: "#333"
+                showCancelButton: true,
+                confirmButtonText: "Đồng ý",
+                cancelButtonText: "Hủy",
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                allowOutsideClick: false,
+                width: 520
             }).then((result) => {
                 if (result.isConfirmed) {
                     window.location.href = "/Invoices";
