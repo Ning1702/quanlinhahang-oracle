@@ -19,6 +19,14 @@ namespace Quanlinhahang_Staff.Controllers
             _hubContext = hubContext;
         }
 
+        [HttpPost]
+        [Route("api/NotifyNewBooking")] 
+        public async Task<IActionResult> NotifyNewBooking(string tenKhach, string soDienThoai) 
+        { 
+            await _hubContext.Clients.All.SendAsync("ReceiveNewBooking", tenKhach, soDienThoai); 
+            return Ok(new { success = true }); 
+        }
+
         // ==============================
         // LIST HÓA ĐƠN
         // ==============================
@@ -484,12 +492,7 @@ namespace Quanlinhahang_Staff.Controllers
             return RedirectToAction(nameof(Edit), new { id = hd.HoaDonId, status = 3 });
         }
 
-        [HttpPost]
-        [Route("api/NotifyNewBooking")]
-        public async Task<IActionResult> NotifyNewBooking(string tenKhach, string soDienThoai)
-        {
-            await _hubContext.Clients.All.SendAsync("ReceiveNewBooking", tenKhach, soDienThoai);
-            return Ok();
-        }
+        
+
     }
 }

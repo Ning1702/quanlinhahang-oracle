@@ -211,7 +211,7 @@ namespace Quanlinhahang_Customer.Controllers
                             string sdt = khachHang.SoDienThoai ?? "0000000000";
 
                             string staffApiUrl =
-                                $"https://localhost:7163/api/NotifyNewBooking?tenKhach={Uri.EscapeDataString(ten)}&soDienThoai={Uri.EscapeDataString(sdt)}";
+                                $"https://quanlinhahang-staff.onrender.com/api/NotifyNewBooking?tenKhach={Uri.EscapeDataString(ten)}&soDienThoai={Uri.EscapeDataString(sdt)}";
 
                             await client.PostAsync(staffApiUrl, null);
                         }

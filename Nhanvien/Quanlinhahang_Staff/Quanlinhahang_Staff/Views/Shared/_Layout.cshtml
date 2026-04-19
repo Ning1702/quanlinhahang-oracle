@@ -325,48 +325,74 @@
         });
     </script>
 
+    ```html
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 
+    <audio id="notificationSound" preload="auto">
+        <source src="/audio/ting.mp3" type="audio/mpeg">
+    </audio>
+
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const connection = new signalR.HubConnectionBuilder()
-                .withUrl("/notificationHub")
-                .withAutomaticReconnect()
-                .build();
+        let audioUnlocked = false;
 
-            connection.on("ReceiveNewBooking", function (tenKhach, soDienThoai) {
-                try {
-                    let notificationSound = new Audio('/audio/ting.mp3');
-                    notificationSound.play();
-                } catch (error) {
-                    console.log("Lỗi phát âm thanh: ", error);
+        // Trick để trình duyệt cho phép phát âm thanh
+        document.addEventListener("click", function unlockAudio() {
+            if (audioUnlocked) return;
+
+            let audio = document.getElementById("notificationSound");
+            if (audio) {
+                audio.play().then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audioUnlocked = true;
+                }).catch(() => { });
+            }
+
+            document.removeEventListener("click", unlockAudio);
+        });
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveNewBooking", function (tenKhach, soDienThoai) {
+
+            // 🔊 PHÁT ÂM THANH
+            let audio = document.getElementById("notificationSound");
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(err => console.log("Không phát được:", err));
+            }
+
+            // 🔔 POPUP
+            Swal.fire({
+                icon: "info",
+                title: "📢 Có đơn đặt bàn mới!",
+                html: `
+                    <div style="font-size:16px;line-height:1.6">
+                        👤 Khách: <b>${tenKhach}</b><br/>
+                        📞 SĐT: <b>${soDienThoai}</b><br/>
+                        ⚡ Vui lòng xử lý ngay!
+                    </div>
+                `,
+                confirmButtonText: "Xem ngay",
+                confirmButtonColor: "#c7a368",
+                background: "#fff",
+                color: "#333"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "/Invoices";
                 }
-
-                Swal.fire({
-                    title: '🎉 CÓ ĐƠN ĐẶT BÀN MỚI!',
-                    html: `Khách hàng: <strong>${tenKhach}</strong><br/>SĐT: <strong>${soDienThoai}</strong><br/>Vui lòng kiểm tra và xác nhận ngay!`,
-                    icon: 'info',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: true,
-                    confirmButtonText: 'Tải lại danh sách',
-                    confirmButtonColor: '#28a745',
-                    timer: 10000,
-                    timerProgressBar: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.reload();
-                    }
-                });
-            });
-
-            connection.start().then(function () {
-                console.log("Đã kết nối hệ thống báo động thời gian thực có âm thanh!");
-            }).catch(function (err) {
-                return console.error(err.toString());
             });
         });
+
+        connection.start()
+            .then(() => console.log("✅ SignalR connected"))
+            .catch(err => console.error("❌ SignalR lỗi:", err));
     </script>
+    ```
+
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
