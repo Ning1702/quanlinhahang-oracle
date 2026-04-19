@@ -73,57 +73,86 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const txtSearch = document.getElementById('txtSearchCustomer');
-            const hfId = document.getElementById('hfKhachHangID');
-            const resultBox = document.getElementById('customerResults');
-            const btnClear = document.getElementById('btnClearCustomer');
+            const txtSearch = document.getElementById("txtSearchCustomer");
+            const hfId = document.getElementById("hfKhachHangID");
+            const resultBox = document.getElementById("customerResults");
+            const btnClear = document.getElementById("btnClearCustomer");
 
-            txtSearch.addEventListener('input', function () {
+            let debounceTimer = null;
+
+            txtSearch.addEventListener("input", function () {
                 let keyword = this.value.trim();
 
+                hfId.value = "";
+
+                if (debounceTimer) clearTimeout(debounceTimer);
+
                 if (keyword.length === 0) {
-                    hfId.value = '';
-                    resultBox.style.display = 'none';
+                    resultBox.innerHTML = "";
+                    resultBox.style.display = "none";
                     return;
                 }
 
-                if (keyword.length < 2) return;
+                debounceTimer = setTimeout(() => {
+                    fetch(`/Invoices/SearchCustomer?keyword=${encodeURIComponent(keyword)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            resultBox.innerHTML = "";
 
-                fetch(`/Invoices/SearchCustomer?keyword=${encodeURIComponent(keyword)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        resultBox.innerHTML = '';
-                        if (data.length > 0) {
-                            data.forEach(item => {
-                                let li = document.createElement('li');
-                                li.className = 'list-group-item list-group-item-action text-dark';
-                                li.style.cursor = 'pointer';
-                                li.innerHTML = `<i class="fas fa-user text-muted me-2"></i> <strong>${item.text}</strong>`;
+                            if (data && data.length > 0) {
+                                data.forEach(item => {
+                                    let li = document.createElement("li");
+                                    li.className = "list-group-item list-group-item-action text-dark";
+                                    li.style.cursor = "pointer";
+                                    li.innerHTML = `
+                                        <div>
+                                            <strong>${item.hoTen}</strong><br />
+                                            <small>SĐT: ${item.soDienThoai ?? ""}</small>
+                                        </div>
+                                    `;
 
-                                li.onclick = function () {
-                                    txtSearch.value = item.text;
-                                    hfId.value = item.id;
-                                    resultBox.style.display = 'none';
-                                };
-                                resultBox.appendChild(li);
-                            });
-                        } else {
-                            resultBox.innerHTML = '<li class="list-group-item text-danger">Không tìm thấy khách hàng!</li>';
-                        }
-                        resultBox.style.display = 'block';
-                    });
+                                    li.addEventListener("click", function () {
+                                        txtSearch.value = `${item.hoTen} - ${item.soDienThoai ?? ""}`;
+                                        hfId.value = item.khachHangId;
+                                        resultBox.style.display = "none";
+                                    });
+
+                                    resultBox.appendChild(li);
+                                });
+                            } else {
+                                resultBox.innerHTML = `
+                                    <li class="list-group-item text-danger">
+                                        Không tìm thấy khách hàng phù hợp
+                                    </li>
+                                `;
+                            }
+
+                            resultBox.style.display = "block";
+                        })
+                        .catch(() => {
+                            resultBox.innerHTML = `
+                                <li class="list-group-item text-danger">
+                                    Lỗi tìm kiếm khách hàng
+                                </li>
+                            `;
+                            resultBox.style.display = "block";
+                        });
+                }, 250);
             });
 
-            btnClear.addEventListener('click', function () {
-                txtSearch.value = '';
-                hfId.value = '';
-                resultBox.style.display = 'none';
+            btnClear.addEventListener("click", function () {
+                txtSearch.value = "";
+                hfId.value = "";
+                resultBox.innerHTML = "";
+                resultBox.style.display = "none";
                 txtSearch.focus();
             });
 
-            document.addEventListener('click', function (e) {
-                if (!txtSearch.contains(e.target) && !resultBox.contains(e.target)) {
-                    resultBox.style.display = 'none';
+            document.addEventListener("click", function (e) {
+                if (!txtSearch.contains(e.target) &&
+                    !resultBox.contains(e.target) &&
+                    !btnClear.contains(e.target)) {
+                    resultBox.style.display = "none";
                 }
             });
         });

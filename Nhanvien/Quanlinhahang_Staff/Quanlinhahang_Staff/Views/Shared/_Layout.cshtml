@@ -356,30 +356,38 @@
             .build();
 
         connection.on("ReceiveNewBooking", function (tenKhach, soDienThoai) {
-
             let audio = document.getElementById("notificationSound");
             if (audio) {
+                audio.volume = 1.0;
                 audio.currentTime = 0;
                 audio.play().catch(err => console.log("Không phát được:", err));
             }
 
             Swal.fire({
-                icon: "warning",
-                title: "Có đơn đặt bàn mới !",
+                toast: true,
+                position: "top-end",
+                icon: "info",
+                title: "🎉 CÓ ĐƠN ĐẶT BÀN MỚI!",
                 html: `
-                    <div style="font-size:18px; line-height:1.8;">
-                        Bạn vừa nhận được đơn mới từ khách <b>${tenKhach}</b><br>
+                    <div style="font-size:15px; line-height:1.5; text-align:left;">
+                        Khách hàng: <b>${tenKhach}</b><br>
                         SĐT: <b>${soDienThoai}</b><br>
-                        Bạn có muốn mở danh sách hóa đơn để xử lý ngay không?
+                        Vui lòng kiểm tra và xác nhận ngay!
                     </div>
                 `,
-                showCancelButton: true,
-                confirmButtonText: "Đồng ý",
-                cancelButtonText: "Hủy",
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                allowOutsideClick: false,
-                width: 520
+                width: 360,
+                padding: "1rem",
+                showConfirmButton: true,
+                confirmButtonText: "Tải lại danh sách",
+                confirmButtonColor: "#28a745",
+                timer: 10000,
+                timerProgressBar: true,
+                background: "#fff",
+                color: "#333",
+                didOpen: (toast) => {
+                    toast.addEventListener("mouseenter", Swal.stopTimer);
+                    toast.addEventListener("mouseleave", Swal.resumeTimer);
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     window.location.href = "/Invoices";

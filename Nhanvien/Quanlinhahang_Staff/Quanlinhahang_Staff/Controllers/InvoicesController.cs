@@ -20,11 +20,39 @@ namespace Quanlinhahang_Staff.Controllers
         }
 
         [HttpPost]
-        [Route("api/NotifyNewBooking")] 
-        public async Task<IActionResult> NotifyNewBooking(string tenKhach, string soDienThoai) 
-        { 
-            await _hubContext.Clients.All.SendAsync("ReceiveNewBooking", tenKhach, soDienThoai); 
-            return Ok(new { success = true }); 
+        [Route("api/NotifyNewBooking")]
+        public async Task<IActionResult> NotifyNewBooking(string tenKhach, string soDienThoai)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveNewBooking", tenKhach, soDienThoai);
+            return Ok(new { success = true });
+        }
+
+        // ==============================
+        // LIVE SEARCH KHÁCH HÀNG
+        // ==============================
+        [HttpGet]
+        public async Task<IActionResult> SearchCustomer(string keyword)
+        {
+            keyword = (keyword ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(keyword))
+                return Json(new List<object>());
+
+            var data = await _db.KhachHangs
+                .Where(k =>
+                    (k.HoTen != null && k.HoTen.ToLower().Contains(keyword.ToLower())) ||
+                    (k.SoDienThoai != null && k.SoDienThoai.Contains(keyword)))
+                .OrderBy(k => k.HoTen)
+                .Select(k => new
+                {
+                    khachHangId = k.KhachHangId,
+                    hoTen = k.HoTen,
+                    soDienThoai = k.SoDienThoai
+                })
+                .Take(10)
+                .ToListAsync();
+
+            return Json(data);
         }
 
         // ==============================
@@ -438,11 +466,18 @@ namespace Quanlinhahang_Staff.Controllers
 
             int hour = DateTime.UtcNow.Hour;
             string tenKhungGio = hour < 15 ? "Trưa" : "Tối";
+
             var kg = await _db.KhungGios.FirstOrDefaultAsync(k => k.TenKhungGio == tenKhungGio);
             if (kg != null) vm.KhungGioID = kg.KhungGioId;
 
-            ViewBag.ListKhungGio = await _db.KhungGios.ToListAsync();
-            ViewBag.BanPhongs = await _db.BanPhongs.Include(b => b.LoaiBanPhong).ToListAsync();
+            ViewBag.ListKhungGio = await _db.KhungGios
+                .Where(k => k.TenKhungGio == "Trưa" || k.TenKhungGio == "Tối")
+                .OrderBy(k => k.KhungGioId)
+                .ToListAsync();
+
+            ViewBag.BanPhongs = await _db.BanPhongs
+                .Include(b => b.LoaiBanPhong)
+                .ToListAsync();
 
             return View(vm);
         }
@@ -454,45 +489,75 @@ namespace Quanlinhahang_Staff.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Status = status;
-                ViewBag.ListKhungGio = await _db.KhungGios.ToListAsync();
-                ViewBag.BanPhongs = await _db.BanPhongs.Include(b => b.LoaiBanPhong).ToListAsync();
+                ViewBag.ListKhungGio = await _db.KhungGios
+                    .Where(k => k.TenKhungGio == "Trưa" || k.TenKhungGio == "Tối")
+                    .OrderBy(k => k.KhungGioId)
+                    .ToListAsync();
+
+                ViewBag.BanPhongs = await _db.BanPhongs
+                    .Include(b => b.LoaiBanPhong)
+                    .ToListAsync();
+
                 return View(vm);
             }
 
-            var datBan = new DatBan
+            using var transaction = await _db.Database.BeginTransactionAsync();
+
+            try
             {
-                KhachHangId = vm.KhachHangID,
-                BanPhongId = (vm.BanPhongID == null || vm.BanPhongID == 0) ? null : vm.BanPhongID,
-                KhungGioId = vm.KhungGioID,
-                NgayDen = DateOnly.FromDateTime(vm.NgayDen),
-                ThoiGianTaoDon = DateTime.UtcNow,
-                TrangThaiId = 3,
-                YeuCauDacBiet = "Tạo tại quầy"
-            };
+                var datBan = new DatBan
+                {
+                    KhachHangId = vm.KhachHangID,
+                    BanPhongId = (vm.BanPhongID == null || vm.BanPhongID == 0) ? null : vm.BanPhongID,
+                    KhungGioId = vm.KhungGioID,
+                    NgayDen = DateOnly.FromDateTime(vm.NgayDen),
+                    ThoiGianTaoDon = DateTime.UtcNow,
+                    TrangThaiId = 3,
+                    YeuCauDacBiet = "Tạo tại quầy"
+                };
 
-            _db.DatBans.Add(datBan);
-            await _db.SaveChangesAsync();
+                _db.DatBans.Add(datBan);
+                await _db.SaveChangesAsync();
 
-            var hd = new HoaDon
+                var hd = new HoaDon
+                {
+                    DatBanId = datBan.DatBanId,
+                    NgayLap = DateTime.UtcNow,
+                    TongTien = 0,
+                    TrangThaiId = 3,
+                    Vatpercent = 10m
+                };
+
+                int? staffId = HttpContext.Session.GetInt32("AccountId");
+                if (staffId.HasValue)
+                    hd.TaiKhoanId = staffId.Value;
+
+                _db.HoaDons.Add(hd);
+                await _db.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                TempData["msg"] = "📝 Đã tạo đơn thành công. Vui lòng thêm món ăn!";
+                return RedirectToAction(nameof(Edit), new { id = hd.HoaDonId, status = 3 });
+            }
+            catch (Exception ex)
             {
-                DatBanId = datBan.DatBanId,
-                NgayLap = DateTime.UtcNow,
-                TongTien = 0,
-                TrangThaiId = 3,
-                Vatpercent = 10m
-            };
+                await transaction.RollbackAsync();
 
-            int? staffId = HttpContext.Session.GetInt32("AccountId");
-            if (staffId.HasValue) hd.TaiKhoanId = staffId.Value;
+                ModelState.AddModelError("", ex.InnerException?.Message ?? ex.Message);
 
-            _db.HoaDons.Add(hd);
-            await _db.SaveChangesAsync();
+                ViewBag.Status = status;
+                ViewBag.ListKhungGio = await _db.KhungGios
+                    .Where(k => k.TenKhungGio == "Trưa" || k.TenKhungGio == "Tối")
+                    .OrderBy(k => k.KhungGioId)
+                    .ToListAsync();
 
-            TempData["msg"] = "📝 Đã tạo đơn thành công. Vui lòng thêm món ăn!";
-            return RedirectToAction(nameof(Edit), new { id = hd.HoaDonId, status = 3 });
+                ViewBag.BanPhongs = await _db.BanPhongs
+                    .Include(b => b.LoaiBanPhong)
+                    .ToListAsync();
+
+                return View(vm);
+            }
         }
-
-        
-
     }
 }
